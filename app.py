@@ -15,10 +15,20 @@ def calculate_volume_profile(df, window=120, bins=50):
     poc_series = pd.Series(index=df.index, dtype=float)
     for i in range(window, len(df)):
         window_df = df.iloc[i-window:i]
+        if window_df.empty: continue
         hist, bin_edges = np.histogram(window_df['Close'], bins=bins, weights=window_df['Volume'])
         max_vol_idx = np.argmax(hist)
         poc_series.iloc[i] = (bin_edges[max_vol_idx] + bin_edges[max_vol_idx+1]) / 2
     return poc_series
+
+def flatten_yf_columns(df, ticker):
+    """야후 파이낸스 다중 컬럼 인덱스 평탄화 헬퍼 함수"""
+    if isinstance(df.columns, pd.MultiIndex):
+        if ticker in df.columns.get_level_values(1):
+            return df.xs(ticker, level=1, axis=1)
+        else:
+            return df.droplevel(1, axis=1)
+    return df
 
 st.set_page_config(page_title="주식 백테스트 대시보드", layout="wide")
 st.title("📈 90분 봉 타점 + 일봉 이평선 합성 백테스트")
@@ -27,15 +37,14 @@ with st.sidebar:
     st.header("⚙️ 백테스트 설정")
     ticker = st.text_input("종목 코드 입력 (예: 005930.KS, AAPL)", "005930.KS")
     
-    # 시간 봉 옵션
     timeframe_option = st.selectbox("시간 봉 선택", ["90분 봉 (90m)", "1시간 봉 (1h)", "2시간 봉 (2h)", "4시간 봉 (4h)"], index=0)
     tf_code_map = {"90분 봉 (90m)": "90m", "1시간 봉 (1h)": "1h", "2시간 봉 (2h)": "2h", "4시간 봉 (4h)": "4h"}
     selected_tf = tf_code_map[timeframe_option]
     
-    # 30분 봉(90m 생성용)은 최대 60일까지만 지원
-    max_days_allowed = 60 if selected_tf == "90m" else 730
+    # 90m은 최대 59일 (시차 고려 안전범위), 1h 기반은 720일
+    max_days_allowed = 59 if selected_tf == "90m" else 720
     if selected_tf == "90m":
-        st.warning("⚠️ 야후 파이낸스 정책상 '90분 봉(30분 봉 기반)'은 최근 60일까지만 조회가 가능합니다.")
+        st.warning("⚠️ 야후 무료 데이터 정책상 '90분 봉'은 최근 60일 이내로만 조회가 가능합니다.")
         
     today = datetime.date.today()
     limit_ago = today - datetime.timedelta(days=max_days_allowed)
@@ -57,26 +66,24 @@ if run_btn:
         st.warning("시작일과 종료일을 모두 선택해 주세요.")
     else:
         start_date, end_date = date_range
+        # yfinance end 파라미터는 exclusive(제외)이므로 하루를 더해줍니다.
+        end_date_yf = end_date + datetime.timedelta(days=1)
         
         if selected_tf == "90m" and (end_date - start_date).days > 60:
-            st.error("90분 봉은 최대 60일까지만 조회 가능합니다. 달력에서 기간을 60일 이내로 줄여주세요.")
+            st.error("90분 봉은 최대 60일까지만 조회 가능합니다. 달력에서 기간을 줄여주세요.")
         elif (end_date - start_date).days > 730:
             st.error("시간 봉 데이터는 최대 최근 730일까지만 불러올 수 있습니다.")
         else:
             with st.spinner(f"'{ticker}' 데이터를 수집하고 합성 중입니다..."):
                 # ==========================================
-                # 1. 일봉 데이터 다운로드 및 일봉 기준 지표 계산
+                # 1. 일봉 데이터 수집 및 지표 계산
                 # ==========================================
-                df_daily = yf.download(ticker, start=start_date - datetime.timedelta(days=200), end=end_date, interval='1d', progress=False)
+                df_daily = yf.download(ticker, start=start_date - datetime.timedelta(days=200), end=end_date_yf, interval='1d', progress=False)
                 
                 if df_daily.empty:
-                    st.error("일봉 데이터를 불러오지 못했습니다. 종목 코드를 확인해 주세요.")
+                    st.error(f"[{ticker}] 일봉 데이터를 불러오지 못했습니다. 종목 코드를 확인해 주세요.")
                 else:
-                    if isinstance(df_daily.columns, pd.MultiIndex):
-                        if ticker in df_daily.columns.get_level_values(1):
-                            df_daily = df_daily.xs(ticker, level=1, axis=1)
-                        else:
-                            df_daily = df_daily.droplevel(1, axis=1)
+                    df_daily = flatten_yf_columns(df_daily, ticker)
                     df_daily.dropna(inplace=True)
                     
                     df_daily['MA5_Daily'] = df_daily['Close'].rolling(window=5).mean()
@@ -88,38 +95,49 @@ if run_btn:
                     daily_indicators = df_daily[['Date_Str', 'MA5_Daily', 'MA20_Daily', 'Vol90_MA_Daily', 'POC_Daily']].copy()
                     
                     # ==========================================
-                    # 2. 시간 봉 데이터 다운로드 및 에러 방지 리샘플링
+                    # 2. 시간 봉 데이터 수집 (우회 로직 포함)
                     # ==========================================
-                    # 야후 에러를 피하기 위해 90m은 '30m'으로 가져와서 합성
-                    fetch_interval = '30m' if selected_tf == '90m' else '1h'
+                    df_intraday = pd.DataFrame()
                     
-                    df_intraday = yf.download(ticker, start=start_date, end=end_date, interval=fetch_interval, progress=False)
-                    
-                    if df_intraday.empty:
-                        st.error("해당 기간의 시간 봉 데이터를 가져올 수 없습니다. 장이 열린 평일인지 확인해 주세요.")
+                    if selected_tf == "90m":
+                        # 시도 1: 90m 네이티브 요청
+                        df_in = yf.download(ticker, start=start_date, end=end_date_yf, interval='90m', progress=False)
+                        if not df_in.empty:
+                            df_intraday = flatten_yf_columns(df_in, ticker)
+                        else:
+                            # 시도 2: 90m이 비어있으면 30m을 가져와서 합성
+                            df_in = yf.download(ticker, start=start_date, end=end_date_yf, interval='30m', progress=False)
+                            if not df_in.empty:
+                                df_temp = flatten_yf_columns(df_in, ticker)
+                                df_temp.dropna(inplace=True)
+                                df_intraday = df_temp.resample('90min').agg({
+                                    'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'
+                                }).dropna()
                     else:
-                        if isinstance(df_intraday.columns, pd.MultiIndex):
-                            if ticker in df_intraday.columns.get_level_values(1):
-                                df_intraday = df_intraday.xs(ticker, level=1, axis=1)
+                        # 1h, 2h, 4h는 1시간 봉을 가져와서 사용/리샘플링
+                        df_in = yf.download(ticker, start=start_date, end=end_date_yf, interval='1h', progress=False)
+                        if not df_in.empty:
+                            df_temp = flatten_yf_columns(df_in, ticker)
+                            df_temp.dropna(inplace=True)
+                            if selected_tf == '1h':
+                                df_intraday = df_temp
                             else:
-                                df_intraday = df_intraday.droplevel(1, axis=1)
+                                df_intraday = df_temp.resample(selected_tf).agg({
+                                    'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'
+                                }).dropna()
+
+                    if df_intraday.empty:
+                        st.error("해당 기간의 시간 봉 데이터를 가져올 수 없습니다. 장이 열린 평일이 포함되어 있는지 확인해 주세요.")
+                    else:
                         df_intraday.dropna(inplace=True)
                         
-                        # 90m, 2h, 4h 모두 리샘플링 실행 (1h만 제외)
-                        if selected_tf != '1h':
-                            resample_rule = '90min' if selected_tf == '90m' else selected_tf
-                            df_intraday = df_intraday.resample(resample_rule).agg({
-                                'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'
-                            }).dropna()
-                            
-                        # 시간 봉 전용 지표 (단기 진입용 볼린저 밴드 및 ATR)
                         bb = ta.volatility.BollingerBands(close=df_intraday['Close'], window=20, window_dev=2)
                         df_intraday['BB_Lower'] = bb.bollinger_lband()
                         df_intraday['BB_Width'] = (bb.bollinger_hband() - bb.bollinger_lband()) / df_intraday['Close'].rolling(window=20).mean()
                         df_intraday['ATR'] = ta.volatility.AverageTrueRange(high=df_intraday['High'], low=df_intraday['Low'], close=df_intraday['Close'], window=14).average_true_range()
                         
                         # ==========================================
-                        # 3. 시간 봉 데이터에 일봉 지표 병합 (Merge)
+                        # 3. 시간 봉 데이터에 일봉 지표 병합
                         # ==========================================
                         df_intraday['Date_Str'] = df_intraday.index.strftime('%Y-%m-%d')
                         df = pd.merge(df_intraday.reset_index(), daily_indicators, on='Date_Str', how='left')
@@ -133,7 +151,7 @@ if run_btn:
                         df.dropna(subset=['MA20', 'BB_Lower'], inplace=True)
                         
                         if len(df) < 25:
-                            st.error("데이터 개수가 너무 적습니다. 휴일이 포함되어 있거나 60일 미만의 좁은 범위일 수 있습니다.")
+                            st.error("데이터 개수가 너무 적습니다. 휴일이 포함되어 있거나 조회 기간이 너무 짧을 수 있습니다.")
                         else:
                             # ==========================================
                             # 4. 백테스트 시뮬레이션
@@ -158,13 +176,11 @@ if run_btn:
                                 open_price = float(df['Open'].iloc[i])
                                 vol = float(df['Volume'].iloc[i])
                                 
-                                # 일봉 기준
                                 ma5 = float(df['MA5'].iloc[i])
                                 ma20 = float(df['MA20'].iloc[i])
                                 vol90 = float(df['Vol90_MA'].iloc[i])
                                 poc = float(df['POC'].iloc[i])
                                 
-                                # 시간봉 기준
                                 bb_width = float(df['BB_Width'].iloc[i])
                                 bb_lower = float(df['BB_Lower'].iloc[i])
                                 prev_price = float(df['Close'].iloc[i-1])
@@ -256,7 +272,7 @@ if run_btn:
                                         current_buy_reason = ""
 
                             # ==========================================
-                            # 5. 결과 UI 대시보드
+                            # 5. 결과 UI 출력
                             # ==========================================
                             log_df = pd.DataFrame(trade_log)
                             
