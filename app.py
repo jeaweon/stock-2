@@ -11,7 +11,7 @@ from plotly.subplots import make_subplots
 warnings.filterwarnings('ignore')
 
 def calculate_volume_profile(df, window=120, bins=50):
-    """지정된 기간 동안의 매물대(Point of Control) 계산"""
+    """지정된 기간 동안의 매물대(POC) 계산"""
     poc_series = pd.Series(index=df.index, dtype=float)
     for i in range(window, len(df)):
         window_df = df.iloc[i-window:i]
@@ -21,7 +21,7 @@ def calculate_volume_profile(df, window=120, bins=50):
     return poc_series
 
 st.set_page_config(page_title="주식 백테스트 대시보드", layout="wide")
-st.title("📈 실전 튜닝: 주식 돌파/수축 백테스트")
+st.title("📈 VCP 및 매물대 돌파 백테스트 (전문가 매도 로직)")
 
 with st.sidebar:
     st.header("⚙️ 백테스트 설정")
@@ -32,11 +32,10 @@ with st.sidebar:
     date_range = st.date_input("조회 기간 선택", value=(five_years_ago, today), max_value=today)
     
     st.markdown("---")
-    st.markdown("**매도 기준 설정**")
-    stop_loss_pct = st.number_input("손절매 기준 (%)", value=5.0, step=1.0)
-    take_profit_pct = st.number_input("목표 익절 기준 (%)", value=15.0, step=1.0)
+    st.markdown("**전문가용 매도 기준 (트레일링 스탑)**")
+    atr_mult = st.number_input("ATR 트레일링 스탑 배수 (기본 2배)", value=2.0, step=0.1)
     
-    run_btn = st.button("🚀 튜닝된 백테스트 실행", use_container_width=True)
+    run_btn = st.button("🚀 백테스트 실행", use_container_width=True)
 
 if run_btn:
     if len(date_range) != 2:
@@ -63,19 +62,22 @@ if run_btn:
                 else:
                     df['MA5'] = df['Close'].rolling(window=5).mean()
                     df['MA20'] = df['Close'].rolling(window=20).mean()
-                    # 90일 평균 거래량을 20일(한 달)로 단축하여 최근 모멘텀에 민감하게 반응하도록 수정
-                    df['Vol20_MA'] = df['Volume'].rolling(window=20).mean()
+                    df['Vol90_MA'] = df['Volume'].rolling(window=90).mean() # 원래 요청하신 90일 거래량 복구
                     
                     bb = ta.volatility.BollingerBands(close=df['Close'], window=20, window_dev=2)
                     df['BB_Upper'] = bb.bollinger_hband()
                     df['BB_Lower'] = bb.bollinger_lband()
                     df['BB_Width'] = (df['BB_Upper'] - df['BB_Lower']) / df['MA20'] 
                     
+                    # 시장 변동성 측정용 ATR 지표 추가 (14일 기준)
+                    df['ATR'] = ta.volatility.AverageTrueRange(high=df['High'], low=df['Low'], close=df['Close'], window=14).average_true_range()
+                    
                     df['POC'] = calculate_volume_profile(df)
                     
                     position = 0
                     buy_date, buy_price = None, 0
                     current_buy_reason = ""
+                    highest_since_entry = 0 # 트레일링 스탑을 위한 고점 기록
                     trade_log = []
                     
                     for i in range(120, len(df)):
@@ -85,44 +87,49 @@ if run_btn:
                         vol = float(df['Volume'].iloc[i])
                         ma5 = float(df['MA5'].iloc[i])
                         ma20 = float(df['MA20'].iloc[i])
-                        vol20 = float(df['Vol20_MA'].iloc[i])
+                        vol90 = float(df['Vol90_MA'].iloc[i])
                         poc = float(df['POC'].iloc[i])
                         bb_width = float(df['BB_Width'].iloc[i])
                         prev_price = float(df['Close'].iloc[i-1])
                         
-                        # [조건 튜닝]
+                        # [사용자 요청 원본 매수 조건 100% 복구]
                         cond1 = (prev_price < poc) and (price > poc) and (ma5 > ma20)
-                        cond2 = (vol > vol20 * 1.5) and (ma5 > ma20)
-                        # 조건 3 완화: 밴드폭 10% 미만 수축, 거래량 2.5배 폭발
-                        cond3 = (bb_width < 0.10) and (vol > vol20 * 2.5)
-                        # 조건 4 완화: 매물대 지지 오차 범위를 4% 이내로 확대
-                        cond4 = (abs(price - poc) / poc < 0.04) and (price > open_price)
+                        cond2 = (vol > vol90 * 1.5) and (ma5 > ma20)
+                        cond3 = (bb_width < 0.05) and (vol > vol90 * 3.0)
+                        cond4 = (abs(price - poc) / poc < 0.02) and (price > open_price)
                         
                         is_buy_signal = cond1 or cond2 or cond3 or cond4
                         
-                        # 포지션이 없을 때 진입
+                        # 매수 실행
                         if position == 0 and is_buy_signal:
                             position = 1
                             buy_date = date
                             buy_price = price
+                            highest_since_entry = price # 매수 시점 가격으로 최고가 초기화
                             
-                            if cond3: current_buy_reason = "조건3: VCP 수축 폭발"
-                            elif cond4: current_buy_reason = "조건4: 매물대 지지 반등"
-                            elif cond1: current_buy_reason = "조건1: 매물대 돌파"
+                            if cond1: current_buy_reason = "조건1: 매물대 돌파"
                             elif cond2: current_buy_reason = "조건2: 거래량 1.5배 돌파"
+                            elif cond3: current_buy_reason = "조건3: VCP 수축 폭발"
+                            elif cond4: current_buy_reason = "조건4: 매물대 지지 반등"
                             
-                        # 포지션이 있을 때 청산 로직 (손절매, 익절, 데드크로스)
+                        # 매도 실행 (포지션 보유 중일 때)
                         elif position == 1:
-                            is_stop_loss = price <= buy_price * (1 - stop_loss_pct / 100)
-                            is_take_profit = price >= buy_price * (1 + take_profit_pct / 100)
-                            is_dead_cross = ma20 > ma5
+                            # 진입 이후 주가가 올랐다면 최고가 갱신
+                            highest_since_entry = max(highest_since_entry, price)
+                            
+                            # 1. ATR 트레일링 스탑 라인 계산 (최고가 - ATR의 N배)
+                            atr = df['ATR'].iloc[i]
+                            trailing_stop_price = highest_since_entry - (atr_mult * atr)
+                            
+                            # 조건 확인
+                            is_atr_stop = price < trailing_stop_price
+                            is_ma20_breakdown = price < ma20  # 종가가 20일선 아래로 이탈
                             
                             sell_reason = ""
-                            if is_stop_loss: sell_reason = f"손절매 (-{stop_loss_pct}%)"
-                            elif is_take_profit: sell_reason = f"목표 달성 익절 (+{take_profit_pct}%)"
-                            elif is_dead_cross: sell_reason = "추세 이탈 (데드크로스)"
+                            if is_atr_stop: sell_reason = f"ATR 트레일링 스탑 이탈"
+                            elif is_ma20_breakdown: sell_reason = "20일선 하향 이탈 (추세 깨짐)"
                             
-                            if is_stop_loss or is_take_profit or is_dead_cross:
+                            if is_atr_stop or is_ma20_breakdown:
                                 sell_price = price
                                 trade_return = (sell_price - buy_price) / buy_price * 100
                                 
@@ -139,14 +146,15 @@ if run_btn:
                                 position = 0
                                 buy_date, buy_price = None, 0
                                 current_buy_reason = ""
+                                highest_since_entry = 0
 
                     # --- 결과 출력 ---
                     log_df = pd.DataFrame(trade_log)
                     
                     if log_df.empty:
-                        st.warning("조건을 완화했음에도 해당 기간 내 매매 조건이 발생하지 않았습니다.")
+                        st.warning("선택한 기간 동안 설정한 4가지 매수 조건에 부합하는 거래가 단 한 번도 발생하지 않았습니다.")
                     else:
-                        st.subheader(f"🎯 [{ticker}] 튜닝된 백테스트 요약")
+                        st.subheader(f"🎯 [{ticker}] 전문가 매도 로직 적용 백테스트 요약")
                         
                         win_trades = log_df[log_df['수익률(%)'] > 0]
                         win_rate = (len(win_trades) / len(log_df)) * 100
@@ -163,11 +171,18 @@ if run_btn:
                         
                         st.divider()
                         
-                        # 종목 분석 리포트 요약
-                        st.subheader("📝 매도 사유별 성과")
-                        sell_stats = log_df['매도사유'].value_counts().reset_index()
-                        sell_stats.columns = ['매도 사유', '발생 횟수']
-                        st.dataframe(sell_stats, use_container_width=True)
+                        col_tbl1, col_tbl2 = st.columns(2)
+                        with col_tbl1:
+                            st.subheader("🛠️ 매수 조건별 성과")
+                            cond_stats = log_df.groupby('매수조건')['수익률(%)'].agg(['count', lambda x: (x>0).mean()*100, 'sum']).reset_index()
+                            cond_stats.columns = ['매수 조건', '매매 횟수', '승률(%)', '단순 합산 수익률(%)']
+                            st.dataframe(cond_stats, use_container_width=True)
+                            
+                        with col_tbl2:
+                            st.subheader("📝 매도 사유별 통계")
+                            sell_stats = log_df['매도사유'].value_counts().reset_index()
+                            sell_stats.columns = ['매도 사유', '발생 횟수']
+                            st.dataframe(sell_stats, use_container_width=True)
                         
                         st.divider()
                         
