@@ -27,15 +27,15 @@ with st.sidebar:
     st.header("⚙️ 백테스트 설정")
     ticker = st.text_input("종목 코드 입력 (예: 005930.KS, AAPL)", "005930.KS")
     
-    # 시간 봉 옵션에 90분 봉을 기본값으로 추가
+    # 시간 봉 옵션
     timeframe_option = st.selectbox("시간 봉 선택", ["90분 봉 (90m)", "1시간 봉 (1h)", "2시간 봉 (2h)", "4시간 봉 (4h)"], index=0)
     tf_code_map = {"90분 봉 (90m)": "90m", "1시간 봉 (1h)": "1h", "2시간 봉 (2h)": "2h", "4시간 봉 (4h)": "4h"}
     selected_tf = tf_code_map[timeframe_option]
     
-    # 야후 파이낸스 정책: 90m은 최대 60일, 1h 기반 리샘플링은 730일 제공
+    # 30분 봉(90m 생성용)은 최대 60일까지만 지원
     max_days_allowed = 60 if selected_tf == "90m" else 730
     if selected_tf == "90m":
-        st.warning("⚠️ 야후 무료 데이터 정책상 '90분 봉'은 최근 60일까지만 조회가 가능합니다.")
+        st.warning("⚠️ 야후 파이낸스 정책상 '90분 봉(30분 봉 기반)'은 최근 60일까지만 조회가 가능합니다.")
         
     today = datetime.date.today()
     limit_ago = today - datetime.timedelta(days=max_days_allowed)
@@ -58,20 +58,19 @@ if run_btn:
     else:
         start_date, end_date = date_range
         
-        # 90m 선택 시 60일 초과 범위 방어 로직
         if selected_tf == "90m" and (end_date - start_date).days > 60:
-            st.error("90분 봉은 최대 60일까지만 조회 가능합니다. 기간을 줄여주세요.")
+            st.error("90분 봉은 최대 60일까지만 조회 가능합니다. 달력에서 기간을 60일 이내로 줄여주세요.")
         elif (end_date - start_date).days > 730:
             st.error("시간 봉 데이터는 최대 최근 730일까지만 불러올 수 있습니다.")
         else:
-            with st.spinner(f"'{ticker}' 데이터를 수집하고 일봉 이평선을 맵핑 중입니다..."):
+            with st.spinner(f"'{ticker}' 데이터를 수집하고 합성 중입니다..."):
                 # ==========================================
                 # 1. 일봉 데이터 다운로드 및 일봉 기준 지표 계산
                 # ==========================================
                 df_daily = yf.download(ticker, start=start_date - datetime.timedelta(days=200), end=end_date, interval='1d', progress=False)
                 
                 if df_daily.empty:
-                    st.error("일봉 데이터를 불러오지 못했습니다.")
+                    st.error("일봉 데이터를 불러오지 못했습니다. 종목 코드를 확인해 주세요.")
                 else:
                     if isinstance(df_daily.columns, pd.MultiIndex):
                         if ticker in df_daily.columns.get_level_values(1):
@@ -89,13 +88,15 @@ if run_btn:
                     daily_indicators = df_daily[['Date_Str', 'MA5_Daily', 'MA20_Daily', 'Vol90_MA_Daily', 'POC_Daily']].copy()
                     
                     # ==========================================
-                    # 2. 시간 봉 데이터 다운로드 및 리샘플링
+                    # 2. 시간 봉 데이터 다운로드 및 에러 방지 리샘플링
                     # ==========================================
-                    fetch_interval = '90m' if selected_tf == '90m' else '1h'
+                    # 야후 에러를 피하기 위해 90m은 '30m'으로 가져와서 합성
+                    fetch_interval = '30m' if selected_tf == '90m' else '1h'
+                    
                     df_intraday = yf.download(ticker, start=start_date, end=end_date, interval=fetch_interval, progress=False)
                     
                     if df_intraday.empty:
-                        st.error("해당 기간의 시간 봉 데이터를 가져올 수 없습니다. 장이 열리는 평일로 설정되어 있는지 확인하세요.")
+                        st.error("해당 기간의 시간 봉 데이터를 가져올 수 없습니다. 장이 열린 평일인지 확인해 주세요.")
                     else:
                         if isinstance(df_intraday.columns, pd.MultiIndex):
                             if ticker in df_intraday.columns.get_level_values(1):
@@ -104,19 +105,21 @@ if run_btn:
                                 df_intraday = df_intraday.droplevel(1, axis=1)
                         df_intraday.dropna(inplace=True)
                         
-                        if selected_tf in ['2h', '4h']:
-                            df_intraday = df_intraday.resample(selected_tf).agg({
+                        # 90m, 2h, 4h 모두 리샘플링 실행 (1h만 제외)
+                        if selected_tf != '1h':
+                            resample_rule = '90min' if selected_tf == '90m' else selected_tf
+                            df_intraday = df_intraday.resample(resample_rule).agg({
                                 'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last', 'Volume': 'sum'
                             }).dropna()
                             
-                        # 단기 진입용 볼린저 밴드 및 ATR은 시간 봉 기준으로 산출
+                        # 시간 봉 전용 지표 (단기 진입용 볼린저 밴드 및 ATR)
                         bb = ta.volatility.BollingerBands(close=df_intraday['Close'], window=20, window_dev=2)
                         df_intraday['BB_Lower'] = bb.bollinger_lband()
                         df_intraday['BB_Width'] = (bb.bollinger_hband() - bb.bollinger_lband()) / df_intraday['Close'].rolling(window=20).mean()
                         df_intraday['ATR'] = ta.volatility.AverageTrueRange(high=df_intraday['High'], low=df_intraday['Low'], close=df_intraday['Close'], window=14).average_true_range()
                         
                         # ==========================================
-                        # 3. 시간 봉 데이터에 일봉 지표 병합 (Merge & ffill)
+                        # 3. 시간 봉 데이터에 일봉 지표 병합 (Merge)
                         # ==========================================
                         df_intraday['Date_Str'] = df_intraday.index.strftime('%Y-%m-%d')
                         df = pd.merge(df_intraday.reset_index(), daily_indicators, on='Date_Str', how='left')
@@ -129,10 +132,12 @@ if run_btn:
                         
                         df.dropna(subset=['MA20', 'BB_Lower'], inplace=True)
                         
-                        # 일봉 지표는 이미 계산되었으므로 시간봉 밴드 생성을 위한 20개만 있으면 됨
                         if len(df) < 25:
-                            st.error("데이터 개수가 부족하여 백테스트를 실행할 수 없습니다.")
+                            st.error("데이터 개수가 너무 적습니다. 휴일이 포함되어 있거나 60일 미만의 좁은 범위일 수 있습니다.")
                         else:
+                            # ==========================================
+                            # 4. 백테스트 시뮬레이션
+                            # ==========================================
                             position_weight = 0.0
                             avg_price = 0.0
                             current_strategy = None
@@ -153,13 +158,13 @@ if run_btn:
                                 open_price = float(df['Open'].iloc[i])
                                 vol = float(df['Volume'].iloc[i])
                                 
-                                # 일봉 기준 지표 판별
+                                # 일봉 기준
                                 ma5 = float(df['MA5'].iloc[i])
                                 ma20 = float(df['MA20'].iloc[i])
                                 vol90 = float(df['Vol90_MA'].iloc[i])
                                 poc = float(df['POC'].iloc[i])
                                 
-                                # 시간 봉 기준 지표 판별
+                                # 시간봉 기준
                                 bb_width = float(df['BB_Width'].iloc[i])
                                 bb_lower = float(df['BB_Lower'].iloc[i])
                                 prev_price = float(df['Close'].iloc[i-1])
@@ -191,7 +196,7 @@ if run_btn:
                                         
                                         if cond1: current_buy_reason = "조건1: 매물대 돌파"
                                         elif cond2: current_buy_reason = "조건2: 거래량 돌파"
-                                        elif cond3: current_buy_reason = "조건3: VCP 수축 폭발"
+                                        elif cond3: current_buy_reason = "조건3: VCP 폭발"
                                         elif cond4: current_buy_reason = "조건4: 매물대 지지"
                                         
                                         first_buy_date = date
@@ -224,7 +229,6 @@ if run_btn:
                                             sell_reason = f"BB {bb_step}차 목표 달성 (+{target_pct*100:.0f}%)"
                                         
                                         elif is_bb_touch and date.split()[0] != last_buy_date.split()[0] and bb_step < 3:
-                                            # 분할매수 횟수 제한 및 당일 중복매수 방지 로직 (날짜 비교)
                                             bb_step += 1
                                             add_weight = 0.35 if bb_step == 2 else 0.175
                                             avg_price = ((avg_price * position_weight) + (close * add_weight)) / (position_weight + add_weight)
@@ -251,6 +255,9 @@ if run_btn:
                                         current_strategy = None
                                         current_buy_reason = ""
 
+                            # ==========================================
+                            # 5. 결과 UI 대시보드
+                            # ==========================================
                             log_df = pd.DataFrame(trade_log)
                             
                             if log_df.empty:
