@@ -30,10 +30,8 @@ st.title("📈 주식 맞춤형 돌파/수축 백테스트")
 with st.sidebar:
     st.header("⚙️ 백테스트 설정")
     
-    # 1. 종목 코드 입력
     ticker = st.text_input("종목 코드 입력 (예: 005930.KS, AAPL)", "005930.KS")
     
-    # 2. 기간 선택
     today = datetime.date.today()
     five_years_ago = today - datetime.timedelta(days=365 * 5)
     
@@ -43,10 +41,8 @@ with st.sidebar:
         max_value=today
     )
     
-    # 3. 실행 버튼
     run_btn = st.button("🚀 백테스트 실행하기", use_container_width=True)
 
-# 실행 버튼을 눌렀을 때 작동하는 로직
 if run_btn:
     if len(date_range) != 2:
         st.warning("시작일과 종료일을 모두 선택해 주세요.")
@@ -54,13 +50,11 @@ if run_btn:
         start_date, end_date = date_range
         
         with st.spinner(f"'{ticker}' 데이터를 가져와 분석 중입니다..."):
-            # 데이터 수집
             df = yf.download(ticker, start=start_date, end=end_date, progress=False)
             
             if df.empty:
                 st.error("데이터를 불러오지 못했습니다. 종목 코드와 날짜를 다시 확인해 주세요.")
             else:
-                # 최신 yfinance 다중 인덱스 컬럼 구조 평탄화 처리
                 if isinstance(df.columns, pd.MultiIndex):
                     if ticker in df.columns.get_level_values(1):
                         df = df.xs(ticker, level=1, axis=1)
@@ -70,9 +64,8 @@ if run_btn:
                 df.dropna(inplace=True)
                 
                 if len(df) < 120:
-                    st.error("선택한 기간의 데이터가 너무 적습니다. 지표 계산을 위해 최소 120일 이상의 기간이 필요합니다.")
+                    st.error("데이터가 부족합니다. 최소 120일 이상의 기간이 필요합니다.")
                 else:
-                    # 지표 및 매물대 계산
                     df['MA5'] = df['Close'].rolling(window=5).mean()
                     df['MA20'] = df['Close'].rolling(window=20).mean()
                     df['Vol90_MA'] = df['Volume'].rolling(window=90).mean()
@@ -84,9 +77,9 @@ if run_btn:
                     
                     df['POC'] = calculate_volume_profile(df)
                     
-                    # 시뮬레이션 실행
                     position = 0
                     buy_date, buy_price = None, 0
+                    current_buy_reason = "" # 현재 진입한 매수 조건 기록
                     trade_log = []
                     
                     for i in range(120, len(df)):
@@ -114,6 +107,12 @@ if run_btn:
                             buy_date = date
                             buy_price = price
                             
+                            # 어떤 조건이 먼저 만족되었는지 텍스트로 기록
+                            if cond1: current_buy_reason = "조건1: 매물대 돌파"
+                            elif cond2: current_buy_reason = "조건2: 거래량 1.5배 돌파"
+                            elif cond3: current_buy_reason = "조건3: VCP 수축 폭발"
+                            elif cond4: current_buy_reason = "조건4: 매물대 지지 반등"
+                            
                         elif is_sell_signal and position == 1:
                             sell_price = price
                             trade_return = (sell_price - buy_price) / buy_price * 100
@@ -123,18 +122,21 @@ if run_btn:
                                 '매수단가': round(buy_price, 2),
                                 '매도일': date,
                                 '매도단가': round(sell_price, 2),
-                                '수익률(%)': round(trade_return, 2)
+                                '수익률(%)': round(trade_return, 2),
+                                '매수조건': current_buy_reason # 매매 일지에 매수 조건 추가
                             })
+                            
                             position = 0
                             buy_date, buy_price = None, 0
+                            current_buy_reason = ""
 
-                    # 결과 요약 및 UI 출력
                     log_df = pd.DataFrame(trade_log)
                     
                     if log_df.empty:
                         st.warning("선택한 기간 동안 설정한 매수 조건에 맞는 구간이 없었습니다.")
                     else:
-                        # 1. 백테스트 결과 요약
+                        st.subheader(f"🎯 [{ticker}] 전체 백테스트 요약")
+                        
                         win_trades = log_df[log_df['수익률(%)'] > 0]
                         win_rate = (len(win_trades) / len(log_df)) * 100
                         
@@ -143,16 +145,48 @@ if run_btn:
                             cumulative_return *= (1 + ret / 100)
                         cumulative_return = (cumulative_return - 1) * 100
 
-                        st.subheader(f"🎯 [{ticker}] 백테스트 결과 요약")
                         col1, col2, col3 = st.columns(3)
                         col1.metric("총 매매 횟수", f"{len(log_df)}회")
-                        col2.metric("승률 (Win Rate)", f"{win_rate:.2f}%")
-                        col3.metric("누적 수익률", f"{cumulative_return:.2f}%")
+                        col2.metric("전체 승률 (Win Rate)", f"{win_rate:.2f}%")
+                        col3.metric("전체 누적 수익률", f"{cumulative_return:.2f}%")
+                        
+                        st.divider()
+                        
+                        # --- 2. 매수 조건별 성과 분석 ---
+                        st.subheader("🛠️ 매수 조건별 성과 분석")
+                        
+                        # 매수조건별로 그룹화하여 통계 산출
+                        condition_stats = []
+                        for condition, group in log_df.groupby('매수조건'):
+                            trades = len(group)
+                            wins = len(group[group['수익률(%)'] > 0])
+                            c_win_rate = (wins / trades) * 100
+                            
+                            # 해당 조건으로 거래했을 때의 누적 수익률 계산
+                            c_cum_ret = 1.0
+                            for r in group['수익률(%)']:
+                                c_cum_ret *= (1 + r / 100)
+                            c_cum_ret = (c_cum_ret - 1) * 100
+                            
+                            avg_ret = group['수익률(%)'].mean()
+                            
+                            condition_stats.append({
+                                '매수 조건': condition,
+                                '매매 횟수': trades,
+                                '승률(%)': round(c_win_rate, 2),
+                                '누적 수익률(%)': round(c_cum_ret, 2),
+                                '평균 수익률(%)': round(avg_ret, 2)
+                            })
+                            
+                        cond_df = pd.DataFrame(condition_stats).sort_values(by='누적 수익률(%)', ascending=False)
+                        st.dataframe(cond_df, use_container_width=True)
+                        
+                        st.divider()
                         
                         st.subheader("📝 상세 매매 일지")
                         st.dataframe(log_df, use_container_width=True)
                         
-                        # 2. 매수/매도 타점 차트 시각화
+                        # --- 차트 시각화 ---
                         st.subheader("📊 매수/매도 타점 차트 시각화")
                         
                         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
@@ -172,10 +206,13 @@ if run_btn:
                         
                         buy_prices = df.loc[df.index.isin(buy_dates), 'Close']
                         sell_prices = df.loc[df.index.isin(sell_dates), 'Close']
+                        
+                        # 매수 마커에 마우스를 올리면 어떤 조건으로 샀는지 텍스트 표시
+                        buy_hover_texts = [f"Buy: {log['매수조건']}<br>Price: {log['매수단가']}" for log in trade_log]
 
                         fig.add_trace(go.Scatter(x=buy_prices.index, y=buy_prices, 
                                                  mode='markers', marker=dict(symbol='triangle-up', size=12, color='green', line=dict(width=2, color='DarkSlateGrey')),
-                                                 name='Buy Signal'), row=1, col=1)
+                                                 name='Buy Signal', text=buy_hover_texts, hoverinfo='text'), row=1, col=1)
                         
                         fig.add_trace(go.Scatter(x=sell_prices.index, y=sell_prices, 
                                                  mode='markers', marker=dict(symbol='triangle-down', size=12, color='red', line=dict(width=2, color='DarkSlateGrey')),
