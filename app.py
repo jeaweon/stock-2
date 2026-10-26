@@ -128,11 +128,15 @@ if run_btn:
                             buy_date, buy_price = None, 0
 
                     # 결과 요약 UI 출력
+                    # ... (이전 코드 생략: 매매 시뮬레이션 for문 끝나는 부분) ...
+
+                    # 결과 요약 UI 출력
                     log_df = pd.DataFrame(trade_log)
                     
                     if log_df.empty:
                         st.warning("선택한 기간 동안 설정한 매수 조건에 맞는 구간이 없었습니다.")
                     else:
+                        # --- 1. 백테스트 결과 요약 ---
                         win_trades = log_df[log_df['수익률(%)'] > 0]
                         win_rate = (len(win_trades) / len(log_df)) * 100
                         
@@ -149,6 +153,41 @@ if run_btn:
                         
                         st.subheader("📝 상세 매매 일지")
                         st.dataframe(log_df, use_container_width=True)
+                        
+                        # --- 2. 매수/매도 타점 차트 시각화 ---
+                        st.subheader("📊 매수/매도 타점 차트 시각화")
+                        
+                        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
+                                            vertical_spacing=0.03, subplot_titles=(f'{ticker} 주가 흐름', '거래량'),
+                                            row_width=[0.2, 0.7])
+                        
+                        fig.add_trace(go.Candlestick(x=df.index,
+                                        open=df['Open'], high=df['High'],
+                                        low=df['Low'], close=df['Close'],
+                                        name='주가'), row=1, col=1)
+                        
+                        fig.add_trace(go.Scatter(x=df.index, y=df['MA5'], line=dict(color='blue', width=1), name='5일선'), row=1, col=1)
+                        fig.add_trace(go.Scatter(x=df.index, y=df['MA20'], line=dict(color='red', width=1), name='20일선'), row=1, col=1)
+                        
+                        buy_dates = [pd.to_datetime(log['매수일']) for log in trade_log]
+                        sell_dates = [pd.to_datetime(log['매도일']) for log in trade_log]
+                        
+                        buy_prices = df.loc[df.index.isin(buy_dates), 'Close']
+                        sell_prices = df.loc[df.index.isin(sell_dates), 'Close']
+
+                        fig.add_trace(go.Scatter(x=buy_prices.index, y=buy_prices, 
+                                                 mode='markers', marker=dict(symbol='triangle-up', size=12, color='green', line=dict(width=2, color='DarkSlateGrey')),
+                                                 name='Buy Signal'), row=1, col=1)
+                        
+                        fig.add_trace(go.Scatter(x=sell_prices.index, y=sell_prices, 
+                                                 mode='markers', marker=dict(symbol='triangle-down', size=12, color='red', line=dict(width=2, color='DarkSlateGrey')),
+                                                 name='Sell Signal'), row=1, col=1)
+                        
+                        fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='거래량', marker_color='rgba(100, 100, 100, 0.5)'), row=2, col=1)
+                        
+                        fig.update_layout(xaxis_rangeslider_visible=False, height=600, showlegend=True, margin=dict(l=20, r=20, t=40, b=20))
+                        
+                        st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("📊 매수/매도 타점 차트 시각화")
                         
