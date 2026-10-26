@@ -11,7 +11,6 @@ from plotly.subplots import make_subplots
 warnings.filterwarnings('ignore')
 
 def calculate_volume_profile(df, window=120, bins=50):
-    """지정된 기간 동안의 매물대(POC) 계산"""
     poc_series = pd.Series(index=df.index, dtype=float)
     for i in range(window, len(df)):
         window_df = df.iloc[i-window:i]
@@ -21,7 +20,7 @@ def calculate_volume_profile(df, window=120, bins=50):
     return poc_series
 
 st.set_page_config(page_title="주식 백테스트 대시보드", layout="wide")
-st.title("📈 VCP 및 매물대 돌파 백테스트 (전문가 매도 로직)")
+st.title("📈 혼합 전략: 돌파 & 볼린저 밴드 분할 매수")
 
 with st.sidebar:
     st.header("⚙️ 백테스트 설정")
@@ -32,8 +31,7 @@ with st.sidebar:
     date_range = st.date_input("조회 기간 선택", value=(five_years_ago, today), max_value=today)
     
     st.markdown("---")
-    st.markdown("**전문가용 매도 기준 (트레일링 스탑)**")
-    atr_mult = st.number_input("ATR 트레일링 스탑 배수 (기본 2배)", value=2.0, step=0.1)
+    atr_mult = st.number_input("돌파전략 ATR 스탑 배수", value=2.0, step=0.1)
     
     run_btn = st.button("🚀 백테스트 실행", use_container_width=True)
 
@@ -43,7 +41,7 @@ if run_btn:
     else:
         start_date, end_date = date_range
         
-        with st.spinner(f"'{ticker}' 데이터를 가져와 분석 중입니다..."):
+        with st.spinner(f"'{ticker}' 데이터를 분석 중입니다..."):
             df = yf.download(ticker, start=start_date, end=end_date, progress=False)
             
             if df.empty:
@@ -58,31 +56,42 @@ if run_btn:
                 df.dropna(inplace=True)
                 
                 if len(df) < 120:
-                    st.error("데이터가 부족합니다. 최소 120일 이상의 기간이 필요합니다.")
+                    st.error("최소 120일 이상의 데이터가 필요합니다.")
                 else:
+                    # 지표 계산
                     df['MA5'] = df['Close'].rolling(window=5).mean()
                     df['MA20'] = df['Close'].rolling(window=20).mean()
-                    df['Vol90_MA'] = df['Volume'].rolling(window=90).mean() # 원래 요청하신 90일 거래량 복구
+                    df['Vol90_MA'] = df['Volume'].rolling(window=90).mean()
                     
                     bb = ta.volatility.BollingerBands(close=df['Close'], window=20, window_dev=2)
                     df['BB_Upper'] = bb.bollinger_hband()
                     df['BB_Lower'] = bb.bollinger_lband()
                     df['BB_Width'] = (df['BB_Upper'] - df['BB_Lower']) / df['MA20'] 
                     
-                    # 시장 변동성 측정용 ATR 지표 추가 (14일 기준)
                     df['ATR'] = ta.volatility.AverageTrueRange(high=df['High'], low=df['Low'], close=df['Close'], window=14).average_true_range()
-                    
                     df['POC'] = calculate_volume_profile(df)
                     
-                    position = 0
-                    buy_date, buy_price = None, 0
-                    current_buy_reason = ""
-                    highest_since_entry = 0 # 트레일링 스탑을 위한 고점 기록
+                    # 가상 계좌(포트폴리오) 세팅
+                    INITIAL_CAPITAL = 10000000 # 1천만 원 시작
+                    cash = INITIAL_CAPITAL
+                    shares = 0
+                    avg_price = 0.0
+                    
+                    # 상태 관리 변수
+                    current_strategy = None
+                    bb_step = 0
+                    last_buy_date = None
+                    first_buy_date = None
+                    highest_since_entry = 0
+                    
                     trade_log = []
+                    buy_markers = []
+                    sell_markers = []
                     
                     for i in range(120, len(df)):
                         date = df.index[i].strftime('%Y-%m-%d')
-                        price = float(df['Close'].iloc[i])
+                        close = float(df['Close'].iloc[i])
+                        low = float(df['Low'].iloc[i])
                         open_price = float(df['Open'].iloc[i])
                         vol = float(df['Volume'].iloc[i])
                         ma5 = float(df['MA5'].iloc[i])
@@ -90,139 +99,85 @@ if run_btn:
                         vol90 = float(df['Vol90_MA'].iloc[i])
                         poc = float(df['POC'].iloc[i])
                         bb_width = float(df['BB_Width'].iloc[i])
+                        bb_lower = float(df['BB_Lower'].iloc[i])
                         prev_price = float(df['Close'].iloc[i-1])
                         
-                        # [사용자 요청 원본 매수 조건 100% 복구]
-                        cond1 = (prev_price < poc) and (price > poc) and (ma5 > ma20)
+                        # [조건 파악]
+                        is_bb_touch = low <= bb_lower # 저가가 볼린저 밴드 하단에 닿았을 때
+                        
+                        cond1 = (prev_price < poc) and (close > poc) and (ma5 > ma20)
                         cond2 = (vol > vol90 * 1.5) and (ma5 > ma20)
                         cond3 = (bb_width < 0.05) and (vol > vol90 * 3.0)
-                        cond4 = (abs(price - poc) / poc < 0.02) and (price > open_price)
+                        cond4 = (abs(close - poc) / poc < 0.02) and (close > open_price)
+                        is_breakout_buy = cond1 or cond2 or cond3 or cond4
                         
-                        is_buy_signal = cond1 or cond2 or cond3 or cond4
-                        
-                        # 매수 실행
-                        if position == 0 and is_buy_signal:
-                            position = 1
-                            buy_date = date
-                            buy_price = price
-                            highest_since_entry = price # 매수 시점 가격으로 최고가 초기화
-                            
-                            if cond1: current_buy_reason = "조건1: 매물대 돌파"
-                            elif cond2: current_buy_reason = "조건2: 거래량 1.5배 돌파"
-                            elif cond3: current_buy_reason = "조건3: VCP 수축 폭발"
-                            elif cond4: current_buy_reason = "조건4: 매물대 지지 반등"
-                            
-                        # 매도 실행 (포지션 보유 중일 때)
-                        elif position == 1:
-                            # 진입 이후 주가가 올랐다면 최고가 갱신
-                            highest_since_entry = max(highest_since_entry, price)
-                            
-                            # 1. ATR 트레일링 스탑 라인 계산 (최고가 - ATR의 N배)
-                            atr = df['ATR'].iloc[i]
-                            trailing_stop_price = highest_since_entry - (atr_mult * atr)
-                            
-                            # 조건 확인
-                            is_atr_stop = price < trailing_stop_price
-                            is_ma20_breakdown = price < ma20  # 종가가 20일선 아래로 이탈
-                            
+                        # 1. 포지션이 없을 때 (신규 매수 진입)
+                        if shares == 0:
+                            if is_bb_touch:
+                                # 볼린저 밴드 하단 1차 매수 (잔고의 30%)
+                                current_strategy = "BB_Bottom"
+                                bb_step = 1
+                                invest_amount = cash * 0.30
+                                bought_shares = invest_amount / close
+                                
+                                shares += bought_shares
+                                cash -= invest_amount
+                                avg_price = close
+                                
+                                first_buy_date = date
+                                last_buy_date = date
+                                
+                                buy_markers.append({'date': date, 'price': low, 'reason': "BB 1차 매수 (30%)"})
+                                
+                            elif is_breakout_buy:
+                                # 기존 돌파 매매 (잔고의 100%)
+                                current_strategy = "Breakout"
+                                invest_amount = cash * 1.0
+                                bought_shares = invest_amount / close
+                                
+                                shares += bought_shares
+                                cash -= invest_amount
+                                avg_price = close
+                                highest_since_entry = close
+                                
+                                first_buy_date = date
+                                buy_markers.append({'date': date, 'price': close, 'reason': "돌파 매수 (100%)"})
+                                
+                        # 2. 포지션 보유 중일 때 (추가 매수 또는 매도 청산)
+                        elif shares > 0:
+                            is_sold = False
                             sell_reason = ""
-                            if is_atr_stop: sell_reason = f"ATR 트레일링 스탑 이탈"
-                            elif is_ma20_breakdown: sell_reason = "20일선 하향 이탈 (추세 깨짐)"
                             
-                            if is_atr_stop or is_ma20_breakdown:
-                                sell_price = price
-                                trade_return = (sell_price - buy_price) / buy_price * 100
+                            # A. 돌파 매매 보유 중 -> 전문가 매도 로직 적용
+                            if current_strategy == "Breakout":
+                                highest_since_entry = max(highest_since_entry, close)
+                                trailing_stop = highest_since_entry - (atr_mult * df['ATR'].iloc[i])
                                 
-                                trade_log.append({
-                                    '매수일': buy_date,
-                                    '매수단가': round(buy_price, 2),
-                                    '매도일': date,
-                                    '매도단가': round(sell_price, 2),
-                                    '수익률(%)': round(trade_return, 2),
-                                    '매수조건': current_buy_reason,
-                                    '매도사유': sell_reason
-                                })
+                                if close < trailing_stop:
+                                    is_sold = True
+                                    sell_reason = "ATR 트레일링 스탑"
+                                elif close < ma20:
+                                    is_sold = True
+                                    sell_reason = "20일선 이탈"
+                                    
+                            # B. 볼린저 밴드 매매 보유 중 -> 익절 또는 물타기
+                            elif current_strategy == "BB_Bottom":
+                                # 현재 step에 따른 익절 목표가 설정
+                                if bb_step == 1: target_pct = 0.03   # 3% 먹으면 매도
+                                elif bb_step == 2: target_pct = 0.01 # 1% 먹으면 매도
+                                else: target_pct = 0.00              # 3차 이후는 0%(본전)에 매도
                                 
-                                position = 0
-                                buy_date, buy_price = None, 0
-                                current_buy_reason = ""
-                                highest_since_entry = 0
-
-                    # --- 결과 출력 ---
-                    log_df = pd.DataFrame(trade_log)
-                    
-                    if log_df.empty:
-                        st.warning("선택한 기간 동안 설정한 4가지 매수 조건에 부합하는 거래가 단 한 번도 발생하지 않았습니다.")
-                    else:
-                        st.subheader(f"🎯 [{ticker}] 전문가 매도 로직 적용 백테스트 요약")
-                        
-                        win_trades = log_df[log_df['수익률(%)'] > 0]
-                        win_rate = (len(win_trades) / len(log_df)) * 100
-                        
-                        cumulative_return = 1.0
-                        for ret in log_df['수익률(%)']:
-                            cumulative_return *= (1 + ret / 100)
-                        cumulative_return = (cumulative_return - 1) * 100
-
-                        col1, col2, col3 = st.columns(3)
-                        col1.metric("총 매매 횟수", f"{len(log_df)}회")
-                        col2.metric("전체 승률 (Win Rate)", f"{win_rate:.2f}%")
-                        col3.metric("전체 누적 수익률", f"{cumulative_return:.2f}%")
-                        
-                        st.divider()
-                        
-                        col_tbl1, col_tbl2 = st.columns(2)
-                        with col_tbl1:
-                            st.subheader("🛠️ 매수 조건별 성과")
-                            cond_stats = log_df.groupby('매수조건')['수익률(%)'].agg(['count', lambda x: (x>0).mean()*100, 'sum']).reset_index()
-                            cond_stats.columns = ['매수 조건', '매매 횟수', '승률(%)', '단순 합산 수익률(%)']
-                            st.dataframe(cond_stats, use_container_width=True)
-                            
-                        with col_tbl2:
-                            st.subheader("📝 매도 사유별 통계")
-                            sell_stats = log_df['매도사유'].value_counts().reset_index()
-                            sell_stats.columns = ['매도 사유', '발생 횟수']
-                            st.dataframe(sell_stats, use_container_width=True)
-                        
-                        st.divider()
-                        
-                        st.subheader("📝 상세 매매 일지")
-                        st.dataframe(log_df, use_container_width=True)
-                        
-                        # --- 차트 시각화 ---
-                        st.subheader("📊 매수/매도 타점 차트 시각화")
-                        
-                        fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
-                                            vertical_spacing=0.03, subplot_titles=(f'{ticker} 주가 흐름', '거래량'),
-                                            row_width=[0.2, 0.7])
-                        
-                        fig.add_trace(go.Candlestick(x=df.index,
-                                        open=df['Open'], high=df['High'],
-                                        low=df['Low'], close=df['Close'],
-                                        name='주가'), row=1, col=1)
-                        
-                        fig.add_trace(go.Scatter(x=df.index, y=df['MA5'], line=dict(color='blue', width=1), name='5일선'), row=1, col=1)
-                        fig.add_trace(go.Scatter(x=df.index, y=df['MA20'], line=dict(color='red', width=1), name='20일선'), row=1, col=1)
-                        
-                        buy_dates = [pd.to_datetime(log['매수일']) for log in trade_log]
-                        sell_dates = [pd.to_datetime(log['매도일']) for log in trade_log]
-                        
-                        buy_prices = df.loc[df.index.isin(buy_dates), 'Close']
-                        sell_prices = df.loc[df.index.isin(sell_dates), 'Close']
-                        
-                        buy_hover_texts = [f"Buy: {log['매수조건']}<br>Price: {log['매수단가']}" for log in trade_log]
-                        sell_hover_texts = [f"Sell: {log['매도사유']}<br>Return: {log['수익률(%)']}%" for log in trade_log]
-
-                        fig.add_trace(go.Scatter(x=buy_prices.index, y=buy_prices, 
-                                                 mode='markers', marker=dict(symbol='triangle-up', size=12, color='green', line=dict(width=2, color='DarkSlateGrey')),
-                                                 name='Buy Signal', text=buy_hover_texts, hoverinfo='text'), row=1, col=1)
-                        
-                        fig.add_trace(go.Scatter(x=sell_prices.index, y=sell_prices, 
-                                                 mode='markers', marker=dict(symbol='triangle-down', size=12, color='red', line=dict(width=2, color='DarkSlateGrey')),
-                                                 name='Sell Signal', text=sell_hover_texts, hoverinfo='text'), row=1, col=1)
-                        
-                        fig.add_trace(go.Bar(x=df.index, y=df['Volume'], name='거래량', marker_color='rgba(100, 100, 100, 0.5)'), row=2, col=1)
-                        
-                        fig.update_layout(xaxis_rangeslider_visible=False, height=600, showlegend=True, margin=dict(l=20, r=20, t=40, b=20))
-                        
-                        st.plotly_chart(fig, use_container_width=True)
+                                target_price = avg_price * (1 + target_pct)
+                                
+                                # 익절 조건 달성 시 매도
+                                if close >= target_price:
+                                    is_sold = True
+                                    sell_reason = f"BB {bb_step}차 목표 익절 (+{target_pct*100:.0f}%)"
+                                
+                                # 익절 실패하고 또 하단에 닿았을 때 (당일 중복 매수 방지)
+                                elif is_bb_touch and date != last_buy_date and bb_step < 3:
+                                    bb_step += 1
+                                    invest_amount = cash * 0.50 # 남은 잔고의 50% 추가 매수
+                                    bought_shares = invest_amount / close
+                                    
+                                    # 평단가 재계산
