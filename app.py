@@ -177,7 +177,7 @@ if run_btn:
                                 
                                 target_price = avg_price * (1 + target_pct)
                                 
-                                # [새로 추가된 로직] 계좌 총자산 기준 손절 계산
+                                # [핵심 로직] 계좌 총자산 기준 손절 계산
                                 # 현재 보유 주식의 평가 금액
                                 current_value = shares * close
                                 # 해당 매매에 투입된 총 매수 금액
