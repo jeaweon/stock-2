@@ -33,7 +33,7 @@ TICKERS = {
 }
 
 st.set_page_config(page_title="주식 모의투자 백테스트", layout="wide")
-st.title("📉 BB 하단 터치 분할 매수 (계좌 총자산 손절 방어)")
+st.title("📉 단순 볼린저 밴드 하단 매수 (+1% 익절 / -1% 손절)")
 
 with st.sidebar:
     st.header("⚙️ 백테스트 설정")
@@ -61,15 +61,11 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # 2번 방법: 계좌 총자산 기준 손절률 설정
-    max_account_loss_pct = st.number_input("최대 허용 계좌 손실률 (%)", value=1.5, step=0.1, help="현재 매매의 평가 손실액이 초기 자본금의 이 비율을 넘어서면 강제 손절합니다.")
-    
-    st.markdown(f"""
+    st.markdown("""
     **초기 자본금: 10,000,000원**
-    * 1차 터치: 잔고 30% 매수 ➔ **+3% 익절**
-    * 2차 터치: 잔고 50% 매수 ➔ **+1% 익절**
-    * 3차 터치: 잔고 50% 매수 ➔ **0% 본전 탈출**
-    * 🚨 **계좌 손절매:** 매매 평가 손실이 **초기 자본금의 -{max_account_loss_pct}% 초과 시 강제 청산**
+    * **매수 규칙:** 주가 최저가(Low)가 볼린저 밴드 하단 터치 시 **전량 매수 (100%)**
+    * **익절 규칙:** 매수가 대비 **+1% 이상 상승 시 전량 매도**
+    * **손절 규칙:** 매수가 대비 **-1% 이하 하락 시 전량 매도**
     """)
     
     run_btn = st.button("🚀 데이터 갱신 및 시뮬레이션", use_container_width=True)
@@ -85,9 +81,6 @@ if run_btn:
             st.error("90분 봉은 최대 60일까지만 조회 가능합니다. 달력에서 기간을 줄여주세요.")
         else:
             with st.spinner(f"'{ticker}' 데이터를 가져오는 중..."):
-                # ==========================================
-                # 1. 시간 봉 데이터 수집 (우회 로직 포함)
-                # ==========================================
                 df_intraday = pd.DataFrame()
                 
                 if selected_tf == "90m":
@@ -127,16 +120,11 @@ if run_btn:
                     if len(df_intraday) < 25:
                         st.error("데이터 개수가 너무 적습니다. 조회 기간을 넓혀주세요.")
                     else:
-                        # ==========================================
-                        # 2. 모의투자 시뮬레이션 (계좌 총자산 손절 로직)
-                        # ==========================================
+                        # 모의투자 시뮬레이션
                         INITIAL_CAPITAL = 10000000
                         cash = INITIAL_CAPITAL
                         shares = 0.0
                         avg_price = 0.0
-                        
-                        bb_step = 0
-                        last_buy_date = None
                         first_buy_date = None
                         
                         trade_log = []
@@ -151,78 +139,41 @@ if run_btn:
                             
                             is_bb_touch = low <= bb_lower
                             
-                            # 신규 진입 (포지션 없음)
+                            # 포지션 없을 때 -> 매수 (100% 매수)
                             if shares == 0:
                                 if is_bb_touch:
-                                    bb_step = 1
-                                    invest_amount = cash * 0.30
-                                    bought_shares = invest_amount / close
-                                    
-                                    shares += bought_shares
-                                    cash -= invest_amount
+                                    bought_shares = cash / close
+                                    shares = bought_shares
+                                    cash = 0.0
                                     avg_price = close
-                                    
                                     first_buy_date = date
-                                    last_buy_date = date.split()[0]
-                                    buy_markers.append({'date': date, 'price': low, 'reason': "BB 1차 매수 (잔고 30%)"})
+                                    buy_markers.append({'date': date, 'price': low, 'reason': "BB 하단 매수 (100%)"})
                             
-                            # 보유 중 (추가 매수 또는 청산)
+                            # 포지션 있을 때 -> 청산 조건 검사
                             elif shares > 0:
+                                target_price = avg_price * 1.01  # +1% 익절
+                                stop_price = avg_price * 0.99    # -1% 손절
+                                
                                 is_sold = False
                                 sell_reason = ""
                                 
-                                if bb_step == 1: target_pct = 0.03
-                                elif bb_step == 2: target_pct = 0.01
-                                else: target_pct = 0.0
-                                
-                                target_price = avg_price * (1 + target_pct)
-                                
-                                # [핵심 로직] 계좌 총자산 기준 손절 계산
-                                # 현재 보유 주식의 평가 금액
-                                current_value = shares * close
-                                # 해당 매매에 투입된 총 매수 금액
-                                invested_value = shares * avg_price
-                                # 현재 매매의 미실현 손익금
-                                unrealized_pnl = current_value - invested_value
-                                
-                                # 손절 허용 최대 금액 (예: 1000만원의 1.5% = -150,000원)
-                                max_loss_amount = -(INITIAL_CAPITAL * (max_account_loss_pct / 100.0))
-                                
-                                # 1. 계좌 총자산 기준 손절 판별
-                                if unrealized_pnl <= max_loss_amount:
+                                if close >= target_price:
                                     is_sold = True
-                                    sell_reason = f"계좌 손절매 (손실액 {int(unrealized_pnl):,}원 이탈)"
-                                
-                                # 2. 익절 판별
-                                elif close >= target_price:
+                                    sell_reason = "목표 익절 (+1% 달성)"
+                                elif close <= stop_price:
                                     is_sold = True
-                                    sell_reason = f"BB {bb_step}차 목표 달성 (+{target_pct*100:.0f}%)"
-                                    
-                                # 3. 익절/손절 실패 및 추가 하락 시 물타기 진입
-                                elif is_bb_touch and date.split()[0] != last_buy_date and bb_step < 3:
-                                    bb_step += 1
-                                    invest_amount = cash * 0.50
-                                    bought_shares = invest_amount / close
-                                    
-                                    total_cost = (shares * avg_price) + invest_amount
-                                    shares += bought_shares
-                                    cash -= invest_amount
-                                    avg_price = total_cost / shares
-                                    
-                                    last_buy_date = date.split()[0]
-                                    buy_markers.append({'date': date, 'price': low, 'reason': f"BB {bb_step}차 추가매수 (잔고 50%)"})
+                                    sell_reason = "손절매 (-1% 이탈)"
                                 
-                                # 매도 실행
                                 if is_sold:
                                     sell_amount = shares * close
                                     cash += sell_amount
                                     trade_return = (close - avg_price) / avg_price * 100
                                     
                                     trade_log.append({
-                                        '최초 진입일': first_buy_date,
-                                        '최종 청산일': date,
-                                        '평균 매수단가': round(avg_price, 2),
-                                        '매도단가': round(close, 2),
+                                        '매수일': first_buy_date,
+                                        '매도일': date,
+                                        '매수가': round(avg_price, 2),
+                                        '매도가': round(close, 2),
                                         '수익률(%)': round(trade_return, 2),
                                         '매도사유': sell_reason
                                     })
@@ -230,17 +181,14 @@ if run_btn:
                                     
                                     shares = 0.0
                                     avg_price = 0.0
-                                    bb_step = 0
 
                         final_equity = cash + (shares * float(df_intraday['Close'].iloc[-1]))
                         total_cumulative_return = ((final_equity / INITIAL_CAPITAL) - 1) * 100
 
-                        # ==========================================
-                        # 3. 결과 UI 대시보드
-                        # ==========================================
+                        # 결과 UI 대시보드
                         log_df = pd.DataFrame(trade_log)
                         
-                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약")
+                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (+1% 익절 / -1% 손절)")
                         
                         col1, col2, col3, col4 = st.columns(4)
                         if log_df.empty:
