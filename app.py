@@ -44,7 +44,7 @@ TICKERS = {
 }
 
 st.set_page_config(page_title="주식 모의투자 백테스트", layout="wide")
-st.title("📉 BB 하단 분할 매수 + 다중 진입/청산 조건")
+st.title("📉 5가지 독립 조건 분할 매수 백테스트")
 
 with st.sidebar:
     st.header("⚙️ 백테스트 설정")
@@ -74,16 +74,17 @@ with st.sidebar:
     
     st.markdown("""
     **초기 자본금: 10,000,000원**
-    * **매수:** 아래 4가지 조건 중 하나를 만족하면서 BB 하단 터치 시
+    * **매수:** 아래 5가지 조건 중 **단 하나라도 만족할 때** 순차 진입 (OR 조건)
         1. 1차 터치: 잔고 30% 매수 ➔ **+3% 익절**
         2. 2차 터치: 잔고 50% 추가 매수 ➔ **+1% 익절**
         3. 3차 터치: 잔고 50% 추가 매수 ➔ **0% 본전 탈출**
-    * **매수 추가 조건:**
+    * **매수 5대 조건:**
         1. 매물대 돌파 + (5일선 > 20일선)
         2. 거래량 1.5배 돌파 + (5일선 > 20일선)
         3. VCP (BB수축 + 거래량 3배 돌파)
-        4. 매물대 지지 반등
-    * **매도 추가 조건:** 20일선 > 5일선 역전 시 (단, 수익 중일 때만 매도)
+        4. 매물대 지지 양봉 반등
+        5. 볼린저 밴드 하단 터치
+    * **매도 추가 조건:** 20일선 > 5일선 데드크로스 발생 시 (수익 중일 때만 전량 매도)
     """)
     
     run_btn = st.button("🚀 데이터 갱신 및 시뮬레이션", use_container_width=True)
@@ -203,30 +204,34 @@ if run_btn:
                             bb_width = float(df['BB_Width'].iloc[i])
                             prev_price = float(df['Close'].iloc[i-1])
                             
-                            is_bb_touch = low <= bb_lower
-                            
-                            # 매수 4가지 조건 검사 및 텍스트 매핑
-                            cond1 = (prev_price < poc) and (close > poc) and (ma5 > ma20)
-                            cond2 = (vol > vol90 * 1.5) and (ma5 > ma20)
-                            cond3 = (bb_width < 0.05) and (vol > vol90 * 3.0)
-                            cond4 = (abs(close - poc) / poc < 0.02) and (close > open_price)
+                            # ==========================================
+                            # 5가지 독립적인 매수 조건 정의
+                            # ==========================================
+                            cond1 = (prev_price < poc) and (close > poc) and (ma5 > ma20) # 1. 매물대 돌파
+                            cond2 = (vol > vol90 * 1.5) and (ma5 > ma20)                  # 2. 거래량 1.5배 돌파
+                            cond3 = (bb_width < 0.05) and (vol > vol90 * 3.0)             # 3. VCP 폭발
+                            cond4 = (abs(close - poc) / poc < 0.02) and (close > open_price) # 4. 매물대 지지 양봉
+                            cond5 = low <= bb_lower                                       # 5. BB하단 터치
                             
                             is_buy_condition_met = False
                             buy_condition_text = ""
                             
-                            if is_bb_touch:
-                                if cond1:
-                                    is_buy_condition_met = True
-                                    buy_condition_text = "조건1(매물대 돌파)"
-                                elif cond2:
-                                    is_buy_condition_met = True
-                                    buy_condition_text = "조건2(거래량 1.5배)"
-                                elif cond3:
-                                    is_buy_condition_met = True
-                                    buy_condition_text = "조건3(VCP)"
-                                elif cond4:
-                                    is_buy_condition_met = True
-                                    buy_condition_text = "조건4(매물대 지지)"
+                            # 조건 1~5 중 하나라도 걸리면 매수 트리거 발동 (우선순위: 1 -> 5)
+                            if cond1:
+                                is_buy_condition_met = True
+                                buy_condition_text = "조건1(매물대 돌파)"
+                            elif cond2:
+                                is_buy_condition_met = True
+                                buy_condition_text = "조건2(거래량 1.5배)"
+                            elif cond3:
+                                is_buy_condition_met = True
+                                buy_condition_text = "조건3(VCP 폭발)"
+                            elif cond4:
+                                is_buy_condition_met = True
+                                buy_condition_text = "조건4(매물대 지지 반등)"
+                            elif cond5:
+                                is_buy_condition_met = True
+                                buy_condition_text = "조건5(BB하단 터치)"
                             
                             # 포지션 없을 때 -> 신규 진입 (1차: 30%)
                             if shares == 0:
@@ -241,7 +246,7 @@ if run_btn:
                                     
                                     first_buy_date = date
                                     last_buy_date = date.split()[0]
-                                    current_buy_reason = f"1차 매수 [{buy_condition_text}]"
+                                    current_buy_reason = f"1차 진입 [{buy_condition_text}]"
                                     
                                     buy_markers.append({'date': date, 'price': low, 'reason': current_buy_reason})
                             
@@ -267,7 +272,7 @@ if run_btn:
                                     is_sold = True
                                     sell_reason = "20일선 > 5일선 데드크로스 (수익실현)"
                                     
-                                # 추가 매수 조건: 익절/매도 실패하고 다시 조건 만족 + BB하단 터치 시
+                                # 추가 매수 조건: 익절/매도 실패하고 다시 5가지 조건 중 하나라도 만족 시
                                 elif is_buy_condition_met and date.split()[0] != last_buy_date and bb_step < 3:
                                     bb_step += 1
                                     invest_amount = cash * 0.50
@@ -291,7 +296,7 @@ if run_btn:
                                     
                                     trade_log.append({
                                         '최초 진입일': first_buy_date,
-                                        '진입 사유': current_buy_reason,
+                                        '진입 사유(누적)': current_buy_reason,
                                         '최종 청산일': date,
                                         '평균 매수단가': round(avg_price, 2),
                                         '매도단가': round(close, 2),
@@ -313,7 +318,7 @@ if run_btn:
                         # ==========================================
                         log_df = pd.DataFrame(trade_log)
                         
-                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (다중 조건)")
+                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (5대 독립 조건 매수)")
                         
                         col1, col2, col3, col4 = st.columns(4)
                         if log_df.empty:
@@ -341,7 +346,7 @@ if run_btn:
                             with col_tbl2:
                                 st.subheader("📝 상세 매매 일지")
                                 # 컬럼 순서 재배치
-                                log_df = log_df[['최초 진입일', '최종 청산일', '진입 사유', '평균 매수단가', '매도단가', '수익률(%)', '매도사유']]
+                                log_df = log_df[['최초 진입일', '최종 청산일', '진입 사유(누적)', '평균 매수단가', '매도단가', '수익률(%)', '매도사유']]
                                 st.dataframe(log_df, use_container_width=True)
                             
                         st.subheader(f"📊 매수/매도 타점 차트 ({selected_tf} 주가 + BB 하단 + 일봉 이평선)")
