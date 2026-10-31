@@ -44,7 +44,7 @@ TICKERS = {
 }
 
 st.set_page_config(page_title="주식 모의투자 백테스트", layout="wide")
-st.title("📉 5가지 독립 조건 분할 매수 + 데드크로스 손절 백테스트")
+st.title("📉 5가지 독립 조건 분할 매수 + 3차 본전 탈출 백테스트")
 
 with st.sidebar:
     st.header("⚙️ 백테스트 설정")
@@ -77,7 +77,7 @@ with st.sidebar:
     * **매수:** 아래 5가지 조건 중 **단 하나라도 만족할 때** 순차 진입 (OR 조건)
         1. 1차 터치: 잔고 30% 매수 ➔ **+3% 익절**
         2. 2차 터치: 잔고 50% 추가 매수 ➔ **+1% 익절**
-        3. 3차 터치: 잔고 50% 추가 매수 ➔ **(고정 목표 익절 없음)**
+        3. 3차 터치: 잔고 50% 추가 매수 ➔ **0% 본전 탈출**
     * **매수 5대 조건:**
         1. 매물대 돌파 + (5일선 > 20일선)
         2. 거래량 1.5배 돌파 + (5일선 > 20일선)
@@ -255,13 +255,15 @@ if run_btn:
                                 is_sold = False
                                 sell_reason = ""
                                 
-                                # 매도 조건 1: 고정 목표 수익률 도달 (1차, 2차에만 적용)
-                                if bb_step == 1 or bb_step == 2:
-                                    target_pct = 0.03 if bb_step == 1 else 0.01
-                                    target_price = avg_price * (1 + target_pct)
-                                    
-                                    if close >= target_price:
-                                        is_sold = True
+                                # 매도 조건 1: 고정 목표 수익률 도달 (1차: +3%, 2차: +1%, 3차: 0% 본전 탈출)
+                                target_pct = 0.03 if bb_step == 1 else (0.01 if bb_step == 2 else 0.00)
+                                target_price = avg_price * (1 + target_pct)
+                                
+                                if close >= target_price:
+                                    is_sold = True
+                                    if bb_step == 3:
+                                        sell_reason = "3차 목표 달성 (0% 본전 탈출)"
+                                    else:
                                         sell_reason = f"{bb_step}차 목표 달성 (+{target_pct*100:.0f}%)"
                                 
                                 # 매도 조건 2: 20일선 > 5일선 데드크로스 (수익/손실 무관 무조건 청산)
@@ -318,7 +320,7 @@ if run_btn:
                         # ==========================================
                         log_df = pd.DataFrame(trade_log)
                         
-                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (데드크로스 손절 적용)")
+                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (3차 본전 탈출 적용)")
                         
                         col1, col2, col3, col4 = st.columns(4)
                         if log_df.empty:
