@@ -44,7 +44,7 @@ TICKERS = {
 }
 
 st.set_page_config(page_title="주식 모의투자 백테스트", layout="wide")
-st.title("📉 5가지 독립 조건 분할 매수 + 3차 본전 탈출 백테스트")
+st.title("📉 4가지 독립 조건 분할 매수 + 3차 본전 탈출 백테스트")
 
 with st.sidebar:
     st.header("⚙️ 백테스트 설정")
@@ -74,16 +74,15 @@ with st.sidebar:
     
     st.markdown("""
     **초기 자본금: 10,000,000원**
-    * **매수:** 아래 5가지 조건 중 **단 하나라도 만족할 때** 순차 진입 (OR 조건)
-        1. 1차 터치: 잔고 30% 매수 ➔ **+3% 익절**
-        2. 2차 터치: 잔고 50% 추가 매수 ➔ **+1% 익절**
-        3. 3차 터치: 잔고 50% 추가 매수 ➔ **0% 본전 탈출**
-    * **매수 5대 조건:**
+    * **매수:** 아래 4가지 조건 중 **단 하나라도 만족할 때** 순차 진입 (OR 조건)
+        1. 1차 진입: 잔고 30% 매수 ➔ **+3% 익절**
+        2. 2차 진입: 잔고 50% 추가 매수 ➔ **+1% 익절**
+        3. 3차 진입: 잔고 50% 추가 매수 ➔ **0% 본전 탈출**
+    * **매수 4대 조건:**
         1. 매물대 돌파 + (5일선 > 20일선)
         2. 거래량 1.5배 돌파 + (5일선 > 20일선)
         3. VCP (BB수축 + 거래량 3배 돌파)
         4. 매물대 지지 양봉 반등
-        5. 볼린저 밴드 하단 터치
     * **공통 매도 조건:** 20일선 > 5일선 데드크로스 발생 시 **(수익/손실 무관 청산)**
     """)
     
@@ -200,23 +199,21 @@ if run_btn:
                             ma20 = float(df['MA20'].iloc[i])
                             vol90 = float(df['Vol90_MA'].iloc[i])
                             poc = float(df['POC'].iloc[i])
-                            bb_lower = float(df['BB_Lower'].iloc[i])
                             bb_width = float(df['BB_Width'].iloc[i])
                             prev_price = float(df['Close'].iloc[i-1])
                             
                             # ==========================================
-                            # 5가지 독립적인 매수 조건 정의
+                            # 4가지 독립적인 매수 조건 정의
                             # ==========================================
                             cond1 = (prev_price < poc) and (close > poc) and (ma5 > ma20) # 1. 매물대 돌파
                             cond2 = (vol > vol90 * 1.5) and (ma5 > ma20)                  # 2. 거래량 1.5배 돌파
                             cond3 = (bb_width < 0.05) and (vol > vol90 * 3.0)             # 3. VCP 폭발
                             cond4 = (abs(close - poc) / poc < 0.02) and (close > open_price) # 4. 매물대 지지 양봉
-                            cond5 = low <= bb_lower                                       # 5. BB하단 터치
                             
                             is_buy_condition_met = False
                             buy_condition_text = ""
                             
-                            # 조건 1~5 중 하나라도 걸리면 매수 트리거 발동
+                            # 조건 1~4 중 하나라도 걸리면 매수 트리거 발동
                             if cond1:
                                 is_buy_condition_met = True
                                 buy_condition_text = "조건1(매물대 돌파)"
@@ -229,9 +226,6 @@ if run_btn:
                             elif cond4:
                                 is_buy_condition_met = True
                                 buy_condition_text = "조건4(매물대 지지 반등)"
-                            elif cond5:
-                                is_buy_condition_met = True
-                                buy_condition_text = "조건5(BB하단 터치)"
                             
                             # 포지션 없을 때 -> 신규 진입 (1차: 30%)
                             if shares == 0:
@@ -274,7 +268,7 @@ if run_btn:
                                     else:
                                         sell_reason = "20일선 > 5일선 데드크로스 (손절)"
                                     
-                                # 추가 매수 조건: 익절/손절 안 당하고 다시 5가지 조건 중 하나라도 만족 시
+                                # 추가 매수 조건: 익절/손절 안 당하고 다시 4가지 조건 중 하나라도 만족 시
                                 if not is_sold and is_buy_condition_met and date.split()[0] != last_buy_date and bb_step < 3:
                                     bb_step += 1
                                     invest_amount = cash * 0.50
@@ -320,7 +314,7 @@ if run_btn:
                         # ==========================================
                         log_df = pd.DataFrame(trade_log)
                         
-                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (3차 본전 탈출 적용)")
+                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (매수 4대 조건 적용)")
                         
                         col1, col2, col3, col4 = st.columns(4)
                         if log_df.empty:
