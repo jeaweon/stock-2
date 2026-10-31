@@ -44,7 +44,7 @@ TICKERS = {
 }
 
 st.set_page_config(page_title="주식 모의투자 백테스트", layout="wide")
-st.title("📉 5가지 독립 조건 분할 매수 백테스트")
+st.title("📉 5가지 독립 조건 분할 매수 + 데드크로스 손절 백테스트")
 
 with st.sidebar:
     st.header("⚙️ 백테스트 설정")
@@ -84,7 +84,7 @@ with st.sidebar:
         3. VCP (BB수축 + 거래량 3배 돌파)
         4. 매물대 지지 양봉 반등
         5. 볼린저 밴드 하단 터치
-    * **공통 매도 조건:** 20일선 > 5일선 데드크로스 발생 시 (수익 중일 때만 전량 매도)
+    * **공통 매도 조건:** 20일선 > 5일선 데드크로스 발생 시 **(수익/손실 무관 청산)**
     """)
     
     run_btn = st.button("🚀 데이터 갱신 및 시뮬레이션", use_container_width=True)
@@ -216,7 +216,7 @@ if run_btn:
                             is_buy_condition_met = False
                             buy_condition_text = ""
                             
-                            # 조건 1~5 중 하나라도 걸리면 매수 트리거 발동 (우선순위: 1 -> 5)
+                            # 조건 1~5 중 하나라도 걸리면 매수 트리거 발동
                             if cond1:
                                 is_buy_condition_met = True
                                 buy_condition_text = "조건1(매물대 돌파)"
@@ -264,12 +264,15 @@ if run_btn:
                                         is_sold = True
                                         sell_reason = f"{bb_step}차 목표 달성 (+{target_pct*100:.0f}%)"
                                 
-                                # 매도 조건 2: 20일선 > 5일선일 때 (수익 중일 때만)
-                                if not is_sold and (ma20 > ma5) and (close > avg_price):
+                                # 매도 조건 2: 20일선 > 5일선 데드크로스 (수익/손실 무관 무조건 청산)
+                                if not is_sold and (ma20 > ma5):
                                     is_sold = True
-                                    sell_reason = "20일선 > 5일선 데드크로스 (수익실현)"
+                                    if close > avg_price:
+                                        sell_reason = "20일선 > 5일선 데드크로스 (익절)"
+                                    else:
+                                        sell_reason = "20일선 > 5일선 데드크로스 (손절)"
                                     
-                                # 추가 매수 조건: 익절/매도 실패하고 다시 5가지 조건 중 하나라도 만족 시
+                                # 추가 매수 조건: 익절/손절 안 당하고 다시 5가지 조건 중 하나라도 만족 시
                                 if not is_sold and is_buy_condition_met and date.split()[0] != last_buy_date and bb_step < 3:
                                     bb_step += 1
                                     invest_amount = cash * 0.50
@@ -315,7 +318,7 @@ if run_btn:
                         # ==========================================
                         log_df = pd.DataFrame(trade_log)
                         
-                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (5대 독립 조건 매수)")
+                        st.subheader(f"🎯 [{ticker}] 모의투자 결과 요약 (데드크로스 손절 적용)")
                         
                         col1, col2, col3, col4 = st.columns(4)
                         if log_df.empty:
@@ -342,7 +345,6 @@ if run_btn:
                             
                             with col_tbl2:
                                 st.subheader("📝 상세 매매 일지")
-                                # 컬럼 순서 재배치
                                 log_df = log_df[['최초 진입일', '최종 청산일', '진입 사유(누적)', '평균 매수단가', '매도단가', '수익률(%)', '매도사유']]
                                 st.dataframe(log_df, use_container_width=True)
                             
