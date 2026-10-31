@@ -77,14 +77,14 @@ with st.sidebar:
     * **매수:** 아래 5가지 조건 중 **단 하나라도 만족할 때** 순차 진입 (OR 조건)
         1. 1차 터치: 잔고 30% 매수 ➔ **+3% 익절**
         2. 2차 터치: 잔고 50% 추가 매수 ➔ **+1% 익절**
-        3. 3차 터치: 잔고 50% 추가 매수 ➔ **0% 본전 탈출**
+        3. 3차 터치: 잔고 50% 추가 매수 ➔ **(고정 목표 익절 없음)**
     * **매수 5대 조건:**
         1. 매물대 돌파 + (5일선 > 20일선)
         2. 거래량 1.5배 돌파 + (5일선 > 20일선)
         3. VCP (BB수축 + 거래량 3배 돌파)
         4. 매물대 지지 양봉 반등
         5. 볼린저 밴드 하단 터치
-    * **매도 추가 조건:** 20일선 > 5일선 데드크로스 발생 시 (수익 중일 때만 전량 매도)
+    * **공통 매도 조건:** 20일선 > 5일선 데드크로스 발생 시 (수익 중일 때만 전량 매도)
     """)
     
     run_btn = st.button("🚀 데이터 갱신 및 시뮬레이션", use_container_width=True)
@@ -252,28 +252,25 @@ if run_btn:
                             
                             # 포지션 있을 때 -> 분할 매수 또는 청산
                             elif shares > 0:
-                                # 익절 목표가 설정
-                                if bb_step == 1: target_pct = 0.03
-                                elif bb_step == 2: target_pct = 0.01
-                                else: target_pct = 0.0
-                                
-                                target_price = avg_price * (1 + target_pct)
-                                
                                 is_sold = False
                                 sell_reason = ""
                                 
-                                # 매도 조건 1: 목표 수익률 도달
-                                if close >= target_price:
-                                    is_sold = True
-                                    sell_reason = f"목표 달성 (+{target_pct*100:.0f}%)"
+                                # 매도 조건 1: 고정 목표 수익률 도달 (1차, 2차에만 적용)
+                                if bb_step == 1 or bb_step == 2:
+                                    target_pct = 0.03 if bb_step == 1 else 0.01
+                                    target_price = avg_price * (1 + target_pct)
+                                    
+                                    if close >= target_price:
+                                        is_sold = True
+                                        sell_reason = f"{bb_step}차 목표 달성 (+{target_pct*100:.0f}%)"
                                 
                                 # 매도 조건 2: 20일선 > 5일선일 때 (수익 중일 때만)
-                                elif (ma20 > ma5) and (close > avg_price):
+                                if not is_sold and (ma20 > ma5) and (close > avg_price):
                                     is_sold = True
                                     sell_reason = "20일선 > 5일선 데드크로스 (수익실현)"
                                     
                                 # 추가 매수 조건: 익절/매도 실패하고 다시 5가지 조건 중 하나라도 만족 시
-                                elif is_buy_condition_met and date.split()[0] != last_buy_date and bb_step < 3:
+                                if not is_sold and is_buy_condition_met and date.split()[0] != last_buy_date and bb_step < 3:
                                     bb_step += 1
                                     invest_amount = cash * 0.50
                                     bought_shares = invest_amount / close
