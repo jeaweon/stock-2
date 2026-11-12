@@ -1,0 +1,299 @@
+ticker,status,score,atr_pct,gap_freq_pct,dist_from_high_pct,above_200h,golden_aligned,is_qualified,rationale
+RBLX,BUY_READY,100.0,1.65,40.0,3.0,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.7%, 10/30일 정배열, 신고가권 3.0%)"
+APP,BUY_READY,100.0,2.08,47.3,2.1,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 2.1%, 10/30일 정배열, 신고가권 2.1%)"
+INTU,WATCHLIST,95.0,1.61,41.8,6.8,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -6.8%, 재돌파 시 매수 대기)"
+ABNB,BUY_READY,95.0,2.23,25.5,1.1,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 2.2%, 10/30일 정배열, 신고가권 1.1%)"
+FSLR,WATCHLIST,95.0,2.84,45.5,6.4,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -6.4%, 재돌파 시 매수 대기)"
+GRAB,WATCHLIST,95.0,1.79,40.0,6.2,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -6.2%, 재돌파 시 매수 대기)"
+JOBY,WATCHLIST,95.0,2.03,63.6,7.6,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -7.6%, 재돌파 시 매수 대기)"
+LULU,BUY_READY,95.0,1.48,34.5,3.5,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.5%, 10/30일 정배열, 신고가권 3.5%)"
+SQQQ,BUY_READY,93.0,3.71,72.7,4.0,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 3.7%, 10/30일 정배열, 신고가권 4.0%)"
+MRNA,BUY_READY,93.0,3.67,49.1,4.9,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 3.7%, 10/30일 정배열, 신고가권 4.9%)"
+UVXY,BUY_READY,93.0,7.52,67.3,2.5,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 7.5%, 10/30일 정배열, 신고가권 2.5%)"
+SPOT,BUY_READY,90.0,1.35,29.1,5.0,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.3%, 10/30일 정배열, 신고가권 5.0%)"
+BLK,BUY_READY,90.0,1.31,30.9,5.2,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.3%, 10/30일 정배열, 신고가권 5.2%)"
+GM,WATCHLIST,90.0,1.24,27.3,8.0,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -8.0%, 재돌파 시 매수 대기)"
+LLY,WATCHLIST,90.0,1.39,38.2,6.8,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -6.8%, 재돌파 시 매수 대기)"
+SYK,WATCHLIST,90.0,1.46,25.5,6.8,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -6.8%, 재돌파 시 매수 대기)"
+SWKS,BUY_READY,88.0,1.4,36.4,3.1,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.4%, 10/30일 정배열, 신고가권 3.1%)"
+SOFI,WATCHLIST,88.0,2.57,45.5,8.7,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -8.7%, 재돌파 시 매수 대기)"
+NXPI,WATCHLIST,88.0,2.42,54.5,8.7,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -8.7%, 재돌파 시 매수 대기)"
+GE,BUY_READY,88.0,1.37,30.9,3.1,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.4%, 10/30일 정배열, 신고가권 3.1%)"
+LEN,WATCHLIST,88.0,1.22,50.9,9.3,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -9.3%, 재돌파 시 매수 대기)"
+UAL,DISQUALIFIED,85.0,0.97,60.0,3.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ACHR,DISQUALIFIED,85.0,3.01,69.1,4.0,True,False,False,❌ 탈락: 10/30일 거시 역배열
+RKLB,DISQUALIFIED,85.0,2.68,74.5,3.1,True,False,False,❌ 탈락: 10/30일 거시 역배열
+AMZN,BUY_READY,83.0,1.51,32.7,5.1,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.5%, 10/30일 정배열, 신고가권 5.1%)"
+IBM,BUY_READY,83.0,1.21,32.7,5.7,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.2%, 10/30일 정배열, 신고가권 5.7%)"
+ZTS,WATCHLIST,83.0,1.27,29.1,7.5,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -7.5%, 재돌파 시 매수 대기)"
+NKE,WATCHLIST,83.0,1.21,36.4,6.1,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -6.1%, 재돌파 시 매수 대기)"
+TOST,BUY_READY,83.0,1.44,29.1,5.3,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.4%, 10/30일 정배열, 신고가권 5.3%)"
+AMGN,DISQUALIFIED,80.0,1.04,30.9,4.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MAR,DISQUALIFIED,80.0,0.96,27.3,3.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+PHM,DISQUALIFIED,80.0,0.92,52.7,7.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+LOW,DISQUALIFIED,80.0,0.99,30.9,4.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+IDXX,DISQUALIFIED,80.0,1.09,36.4,1.5,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ALGN,DISQUALIFIED,80.0,1.0,27.3,2.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+TMO,BUY_READY,78.0,1.23,20.0,2.4,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.2%, 10/30일 정배열, 신고가권 2.4%)"
+LUNR,DISQUALIFIED,78.0,2.71,72.7,3.1,True,False,False,❌ 탈락: 10/30일 거시 역배열
+RIVN,DISQUALIFIED,78.0,2.33,50.9,4.9,True,False,False,❌ 탈락: 10/30일 거시 역배열
+BABA,DISQUALIFIED,78.0,1.38,47.3,1.5,True,False,False,❌ 탈락: 10/30일 거시 역배열
+ANET,DISQUALIFIED,78.0,1.86,65.5,1.4,True,False,False,❌ 탈락: 10/30일 거시 역배열
+AZN,DISQUALIFIED,75.0,0.54,45.5,3.7,True,True,False,❌ 탈락: 변동성 부족(저활성)
+LUV,DISQUALIFIED,75.0,0.83,56.4,1.1,True,True,False,❌ 탈락: 변동성 부족(저활성)
+CCL,DISQUALIFIED,75.0,0.72,54.5,2.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DAL,DISQUALIFIED,75.0,0.69,58.2,1.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+GILD,DISQUALIFIED,75.0,1.08,25.5,5.5,True,True,False,❌ 탈락: 변동성 부족(저활성)
+HD,DISQUALIFIED,75.0,1.0,32.7,5.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+REGN,WATCHLIST,75.0,1.14,27.3,8.8,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -8.8%, 재돌파 시 매수 대기)"
+RCL,DISQUALIFIED,75.0,0.83,41.8,2.1,True,True,False,❌ 탈락: 변동성 부족(저활성)
+QRVO,BUY_READY,73.0,1.28,18.5,5.8,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.3%, 10/30일 정배열, 신고가권 5.8%)"
+JNJ,DISQUALIFIED,73.0,0.91,30.9,2.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+PYPL,DISQUALIFIED,73.0,1.09,25.5,2.7,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DHR,DISQUALIFIED,73.0,1.06,25.5,3.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+BIIB,DISQUALIFIED,73.0,1.09,25.5,4.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DHI,DISQUALIFIED,73.0,0.97,43.6,8.7,True,True,False,❌ 탈락: 변동성 부족(저활성)
+HON,BUY_READY,73.0,1.23,20.0,5.3,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.2%, 10/30일 정배열, 신고가권 5.3%)"
+NEM,DISQUALIFIED,73.0,1.06,58.2,6.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+PGR,BUY_READY,73.0,1.27,21.8,5.5,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.3%, 10/30일 정배열, 신고가권 5.5%)"
+TGT,BUY_READY,73.0,1.15,25.5,4.9,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.1%, 10/30일 정배열, 신고가권 4.9%)"
+VRTX,DISQUALIFIED,73.0,1.03,29.1,3.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+NVO,DISQUALIFIED,73.0,1.01,45.5,6.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MO,DISQUALIFIED,73.0,0.97,29.1,4.7,True,True,False,❌ 탈락: 변동성 부족(저활성)
+IONQ,DISQUALIFIED,73.0,2.11,65.5,6.3,True,False,False,❌ 탈락: 10/30일 거시 역배열
+TSCO,BUY_READY,70.0,1.11,21.8,2.6,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.1%, 10/30일 정배열, 신고가권 2.6%)"
+TM,DISQUALIFIED,70.0,0.48,36.4,3.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ULTA,DISQUALIFIED,70.0,0.75,27.3,2.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DLTR,DISQUALIFIED,70.0,0.98,18.2,3.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+KR,DISQUALIFIED,70.0,0.67,34.5,3.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ON,DISQUALIFIED,70.0,1.66,67.3,1.6,True,False,False,❌ 탈락: 10/30일 거시 역배열
+WM,DISQUALIFIED,70.0,0.96,20.0,4.5,True,True,False,❌ 탈락: 변동성 부족(저활성)
+PEP,DISQUALIFIED,70.0,0.91,23.6,2.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+CCI,DISQUALIFIED,70.0,0.66,25.5,4.7,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MDLZ,DISQUALIFIED,70.0,0.92,20.0,4.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+SNY,DISQUALIFIED,70.0,0.59,38.2,0.5,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MCK,DISQUALIFIED,70.0,0.61,27.3,3.7,True,True,False,❌ 탈락: 변동성 부족(저활성)
+WMT,DISQUALIFIED,70.0,1.05,16.4,4.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+KDP,DISQUALIFIED,70.0,0.87,25.5,0.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DUK,DISQUALIFIED,70.0,0.91,10.9,3.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ENTG,DISQUALIFIED,70.0,2.75,74.5,4.7,True,False,False,❌ 탈락: 10/30일 거시 역배열
+CL,DISQUALIFIED,70.0,0.94,21.8,4.6,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MSFT,BUY_READY,68.0,1.15,27.3,5.1,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.1%, 10/30일 정배열, 신고가권 5.1%)"
+LCID,DISQUALIFIED,68.0,5.25,54.5,13.0,True,False,False,❌ 탈락: 10/30일 거시 역배열
+HII,WATCHLIST,68.0,1.54,18.2,11.9,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -11.9%, 재돌파 시 매수 대기)"
+SAP,DISQUALIFIED,68.0,0.57,49.1,4.5,True,True,False,❌ 탈락: 변동성 부족(저활성)
+SBUX,BUY_READY,65.0,1.14,16.4,5.5,True,True,True,"🏆 고수익 챔피언 DNA 충족! (ATR 1.1%, 10/30일 정배열, 신고가권 5.5%)"
+UPS,DISQUALIFIED,65.0,0.94,9.1,5.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+VMC,DISQUALIFIED,65.0,0.59,30.9,6.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ISRG,WATCHLIST,65.0,1.17,20.0,6.8,True,True,True,"👀 유망 주도주 관심종목 (신고가 대비 눌림목 -6.8%, 재돌파 시 매수 대기)"
+URI,DISQUALIFIED,63.0,0.97,23.6,4.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MRK,DISQUALIFIED,63.0,0.73,36.4,4.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+PM,DISQUALIFIED,63.0,1.21,32.7,7.7,False,True,False,❌ 탈락: 200시간선 하회
+KO,DISQUALIFIED,63.0,0.74,27.3,1.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DG,DISQUALIFIED,63.0,0.76,25.5,5.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DE,DISQUALIFIED,63.0,1.16,10.9,2.2,True,True,False,❌ 탈락: 종합 점수 미달
+EMR,DISQUALIFIED,63.0,1.43,36.4,5.7,False,True,False,❌ 탈락: 200시간선 하회
+BMY,DISQUALIFIED,63.0,0.72,32.7,4.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+COR,DISQUALIFIED,63.0,0.67,25.5,3.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ABBV,DISQUALIFIED,63.0,1.11,23.6,3.8,True,True,False,❌ 탈락: 종합 점수 미달
+SO,DISQUALIFIED,63.0,1.13,10.9,3.5,True,True,False,❌ 탈락: 종합 점수 미달
+IQV,DISQUALIFIED,63.0,0.81,27.3,2.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+KMB,DISQUALIFIED,63.0,1.14,23.6,3.9,True,True,False,❌ 탈락: 종합 점수 미달
+HSY,DISQUALIFIED,63.0,0.77,32.7,1.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+RIOT,DISQUALIFIED,63.0,5.06,74.5,2.3,True,False,False,❌ 탈락: 10/30일 거시 역배열
+EQIX,DISQUALIFIED,63.0,1.13,23.6,1.0,True,True,False,❌ 탈락: 종합 점수 미달
+PODD,DISQUALIFIED,63.0,1.09,34.5,10.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+VZ,DISQUALIFIED,63.0,0.57,25.5,0.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+SONY,DISQUALIFIED,63.0,0.55,43.6,6.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+TDG,DISQUALIFIED,63.0,1.01,18.2,3.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+WFC,DISQUALIFIED,63.0,0.49,27.3,4.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+BRO,DISQUALIFIED,63.0,0.81,47.3,6.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+VEEV,DISQUALIFIED,63.0,0.81,34.5,3.6,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DPZ,DISQUALIFIED,63.0,0.89,25.5,4.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+AMT,DISQUALIFIED,63.0,0.63,29.1,3.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+NUE,DISQUALIFIED,60.0,1.1,34.5,9.1,True,True,False,❌ 탈락: 종합 점수 미달
+CLF,DISQUALIFIED,60.0,1.42,50.9,12.6,True,False,False,❌ 탈락: 10/30일 거시 역배열
+MDT,DISQUALIFIED,60.0,0.6,16.4,4.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+GWW,DISQUALIFIED,60.0,0.6,10.9,2.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ICE,DISQUALIFIED,60.0,0.81,20.0,3.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+PG,DISQUALIFIED,60.0,0.81,14.5,3.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+CME,DISQUALIFIED,60.0,0.77,16.4,2.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+BDX,DISQUALIFIED,60.0,0.81,20.0,1.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+NEE,DISQUALIFIED,60.0,0.79,10.9,3.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+EW,DISQUALIFIED,60.0,0.76,14.5,0.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+INDA,DISQUALIFIED,60.0,0.46,21.8,0.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+COST,DISQUALIFIED,60.0,0.89,14.5,2.6,True,True,False,❌ 탈락: 변동성 부족(저활성)
+CMG,DISQUALIFIED,60.0,0.7,21.8,0.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+DIS,DISQUALIFIED,60.0,0.88,7.3,3.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MA,DISQUALIFIED,60.0,0.85,16.4,4.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MCD,DISQUALIFIED,60.0,0.9,12.7,2.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+V,DISQUALIFIED,60.0,0.82,14.5,4.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+PSA,DISQUALIFIED,60.0,0.64,14.5,3.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+STZ,DISQUALIFIED,60.0,0.73,23.6,3.6,True,True,False,❌ 탈락: 변동성 부족(저활성)
+SPG,DISQUALIFIED,60.0,0.47,12.7,0.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+FAST,DISQUALIFIED,60.0,0.6,14.5,0.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+LHX,DISQUALIFIED,58.0,1.19,20.0,8.4,True,True,False,❌ 탈락: 종합 점수 미달
+FDX,DISQUALIFIED,58.0,1.1,9.1,7.2,True,True,False,❌ 탈락: 종합 점수 미달
+ABT,DISQUALIFIED,58.0,0.68,27.3,6.6,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MLM,DISQUALIFIED,58.0,0.74,30.9,8.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+AXP,DISQUALIFIED,58.0,1.05,20.0,6.7,True,True,False,❌ 탈락: 변동성 부족(저활성)
+CI,DISQUALIFIED,58.0,0.85,30.9,5.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+JD,DISQUALIFIED,58.0,0.56,38.2,5.1,True,True,False,❌ 탈락: 변동성 부족(저활성)
+GD,DISQUALIFIED,58.0,1.1,10.9,8.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+NOC,DISQUALIFIED,55.0,1.22,27.3,8.8,False,True,False,❌ 탈락: 200시간선 하회
+RMD,DISQUALIFIED,55.0,0.82,30.9,3.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+TSLA,DISQUALIFIED,55.0,2.45,49.1,13.5,False,True,False,❌ 탈락: 200시간선 하회
+TXN,DISQUALIFIED,55.0,2.5,52.7,12.6,False,True,False,❌ 탈락: 200시간선 하회
+SLB,DISQUALIFIED,55.0,1.6,30.9,8.6,False,True,False,❌ 탈락: 200시간선 하회
+EOG,DISQUALIFIED,55.0,1.28,45.5,11.3,False,True,False,❌ 탈락: 200시간선 하회
+HBAN,DISQUALIFIED,53.0,0.58,14.5,3.6,True,True,False,❌ 탈락: 변동성 부족(저활성)
+O,DISQUALIFIED,53.0,0.44,10.9,0.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+HMC,DISQUALIFIED,53.0,1.15,40.0,9.6,False,True,False,❌ 탈락: 200시간선 하회
+GIS,DISQUALIFIED,53.0,1.01,40.0,7.6,False,True,False,"❌ 탈락: 200시간선 하회, 변동성 부족(저활성)"
+JPM,DISQUALIFIED,53.0,1.24,21.8,7.0,False,True,False,❌ 탈락: 200시간선 하회
+ROST,DISQUALIFIED,53.0,0.69,23.6,3.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+RJF,DISQUALIFIED,53.0,0.49,18.2,3.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+AIG,DISQUALIFIED,53.0,0.63,12.7,0.3,True,True,False,❌ 탈락: 변동성 부족(저활성)
+ELV,DISQUALIFIED,53.0,0.71,20.0,4.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+WTW,DISQUALIFIED,53.0,0.8,18.2,3.1,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MET,DISQUALIFIED,53.0,0.58,14.5,3.5,True,True,False,❌ 탈락: 변동성 부족(저활성)
+TLT,DISQUALIFIED,53.0,0.3,5.5,0.6,True,True,False,❌ 탈락: 변동성 부족(저활성)
+USB,DISQUALIFIED,53.0,0.46,18.2,3.0,True,True,False,❌ 탈락: 변동성 부족(저활성)
+FITB,DISQUALIFIED,53.0,0.49,14.5,3.5,True,True,False,❌ 탈락: 변동성 부족(저활성)
+AEP,DISQUALIFIED,53.0,0.64,16.4,1.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+UNP,DISQUALIFIED,53.0,1.32,12.7,6.4,False,True,False,❌ 탈락: 200시간선 하회
+CSX,DISQUALIFIED,53.0,0.56,12.7,1.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+PNC,DISQUALIFIED,53.0,0.56,18.2,3.2,True,True,False,❌ 탈락: 변동성 부족(저활성)
+TRV,DISQUALIFIED,53.0,0.54,18.2,4.4,True,True,False,❌ 탈락: 변동성 부족(저활성)
+KEY,DISQUALIFIED,53.0,0.49,16.4,3.1,True,True,False,❌ 탈락: 변동성 부족(저활성)
+FXI,DISQUALIFIED,53.0,0.55,23.6,0.9,True,True,False,❌ 탈락: 변동성 부족(저활성)
+AAPL,DISQUALIFIED,53.0,0.89,21.8,3.7,True,True,False,❌ 탈락: 변동성 부족(저활성)
+CTAS,DISQUALIFIED,53.0,0.65,16.4,2.6,True,True,False,❌ 탈락: 변동성 부족(저활성)
+MDB,DISQUALIFIED,50.0,1.89,47.3,4.6,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+AA,DISQUALIFIED,50.0,1.31,60.0,2.6,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+TER,DISQUALIFIED,50.0,2.47,76.4,4.3,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+NVR,DISQUALIFIED,50.0,1.22,25.5,10.2,False,True,False,❌ 탈락: 200시간선 하회
+F,DISQUALIFIED,48.0,1.08,20.0,3.2,True,False,False,"❌ 탈락: 10/30일 거시 역배열, 변동성 부족(저활성)"
+YUM,DISQUALIFIED,48.0,0.84,20.0,5.1,True,True,False,❌ 탈락: 변동성 부족(저활성)
+BKNG,DISQUALIFIED,48.0,1.53,34.5,7.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+STT,DISQUALIFIED,48.0,0.53,27.3,1.0,True,False,False,"❌ 탈락: 10/30일 거시 역배열, 변동성 부족(저활성)"
+LMT,DISQUALIFIED,48.0,1.21,21.8,13.7,False,True,False,❌ 탈락: 200시간선 하회
+BSX,DISQUALIFIED,48.0,1.46,30.9,9.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+BITO,DISQUALIFIED,45.0,1.24,52.7,7.9,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+QBTS,DISQUALIFIED,45.0,3.48,70.9,9.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+NSC,DISQUALIFIED,45.0,0.5,9.1,4.8,True,True,False,❌ 탈락: 변동성 부족(저활성)
+NXE,DISQUALIFIED,45.0,1.58,60.0,5.5,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+PWR,DISQUALIFIED,45.0,1.5,58.2,7.5,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+STM,DISQUALIFIED,45.0,1.42,74.5,6.3,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+META,DISQUALIFIED,45.0,1.72,40.0,5.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ADBE,DISQUALIFIED,45.0,1.41,52.7,7.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CEG,DISQUALIFIED,45.0,2.03,40.0,7.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+KLAC,DISQUALIFIED,40.0,3.41,74.5,19.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+DELL,DISQUALIFIED,40.0,2.47,69.1,12.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+GS,DISQUALIFIED,40.0,1.66,34.5,7.9,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+FTNT,DISQUALIFIED,40.0,1.84,50.9,36.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CVS,DISQUALIFIED,40.0,0.93,16.4,2.6,True,False,False,"❌ 탈락: 10/30일 거시 역배열, 변동성 부족(저활성)"
+ZS,DISQUALIFIED,40.0,2.1,54.5,18.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+MPC,DISQUALIFIED,40.0,1.74,45.5,16.6,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+UEC,DISQUALIFIED,40.0,1.85,70.9,11.9,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ORCL,DISQUALIFIED,40.0,2.74,52.7,21.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+PLTR,DISQUALIFIED,40.0,2.32,49.1,20.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+QCOM,DISQUALIFIED,40.0,3.29,49.1,10.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+PSX,DISQUALIFIED,40.0,1.42,41.8,13.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+SMCI,DISQUALIFIED,40.0,3.41,78.2,20.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+PANW,DISQUALIFIED,40.0,2.64,50.9,22.9,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+AFRM,DISQUALIFIED,40.0,3.37,52.7,12.6,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ADI,DISQUALIFIED,40.0,2.61,50.9,16.3,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CRWD,DISQUALIFIED,40.0,2.97,50.9,20.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CAT,DISQUALIFIED,40.0,1.72,54.5,23.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CRM,DISQUALIFIED,40.0,1.54,41.8,12.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+NVDA,DISQUALIFIED,40.0,2.44,52.7,15.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+C,DISQUALIFIED,40.0,1.58,32.7,6.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+NOW,DISQUALIFIED,40.0,1.57,50.9,34.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+COIN,DISQUALIFIED,40.0,2.94,70.9,17.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+MS,DISQUALIFIED,40.0,1.58,36.4,7.9,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+HOOD,DISQUALIFIED,40.0,2.87,67.3,16.3,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ETN,DISQUALIFIED,40.0,2.23,61.8,14.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+AMAT,DISQUALIFIED,40.0,3.19,76.4,22.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+INTC,DISQUALIFIED,40.0,3.42,74.5,41.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+MSTR,DISQUALIFIED,40.0,2.99,74.5,11.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+TSM,DISQUALIFIED,40.0,2.57,54.5,14.9,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ETHU,DISQUALIFIED,40.0,3.0,81.8,18.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+EWY,DISQUALIFIED,40.0,2.44,69.1,17.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ARM,DISQUALIFIED,40.0,3.38,76.4,26.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+AVGO,DISQUALIFIED,40.0,2.56,60.0,16.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ENPH,DISQUALIFIED,40.0,3.47,52.7,17.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+COP,DISQUALIFIED,40.0,1.18,47.3,11.6,False,True,False,❌ 탈락: 200시간선 하회
+ASML,DISQUALIFIED,40.0,2.23,58.2,15.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+SE,DISQUALIFIED,40.0,2.66,50.9,13.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+UPST,DISQUALIFIED,40.0,2.54,47.3,12.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+DDOG,DISQUALIFIED,40.0,3.0,54.5,37.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+STX,DISQUALIFIED,40.0,2.77,85.5,14.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+SEDG,DISQUALIFIED,40.0,2.37,63.6,22.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+USO,DISQUALIFIED,40.0,1.0,67.3,13.6,False,True,False,"❌ 탈락: 200시간선 하회, 변동성 부족(저활성)"
+SNOW,DISQUALIFIED,40.0,2.37,43.6,19.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+WDC,DISQUALIFIED,40.0,2.45,76.4,15.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+PLD,DISQUALIFIED,38.0,0.55,16.4,2.0,True,False,False,"❌ 탈락: 10/30일 거시 역배열, 변동성 부족(저활성)"
+UNH,DISQUALIFIED,38.0,1.17,20.0,5.3,False,True,False,❌ 탈락: 200시간선 하회
+PFE,DISQUALIFIED,38.0,1.19,20.0,6.5,False,True,False,❌ 탈락: 200시간선 하회
+UBER,DISQUALIFIED,38.0,1.38,20.0,5.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CFG,DISQUALIFIED,38.0,0.58,21.8,3.3,True,False,False,"❌ 탈락: 10/30일 거시 역배열, 변동성 부족(저활성)"
+GOOGL,DISQUALIFIED,35.0,1.43,25.5,12.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+SLV,DISQUALIFIED,35.0,0.94,61.8,4.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+CVX,DISQUALIFIED,35.0,0.96,38.2,10.1,False,True,False,"❌ 탈락: 200시간선 하회, 변동성 부족(저활성)"
+XOM,DISQUALIFIED,35.0,0.98,38.2,12.0,False,True,False,"❌ 탈락: 200시간선 하회, 변동성 부족(저활성)"
+VLO,DISQUALIFIED,35.0,1.63,34.5,13.5,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CSCO,DISQUALIFIED,35.0,1.7,29.1,16.6,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+BA,DISQUALIFIED,35.0,1.2,14.5,3.3,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ILMN,DISQUALIFIED,35.0,1.92,36.4,12.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+MRVL,DISQUALIFIED,33.0,4.02,74.5,44.3,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+ASTS,DISQUALIFIED,33.0,3.83,70.9,11.3,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+MARA,DISQUALIFIED,33.0,4.32,80.0,15.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CLSK,DISQUALIFIED,33.0,4.75,78.2,28.5,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+KORU,DISQUALIFIED,33.0,8.44,92.7,50.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+MCHP,DISQUALIFIED,33.0,5.17,60.0,28.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+RGTI,DISQUALIFIED,33.0,3.64,74.5,16.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+MU,DISQUALIFIED,33.0,4.4,70.9,30.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+LRCX,DISQUALIFIED,33.0,3.79,78.2,23.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+AMD,DISQUALIFIED,33.0,4.28,69.1,22.5,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CONL,DISQUALIFIED,33.0,6.29,81.8,34.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+NET,DISQUALIFIED,33.0,3.66,47.3,19.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+SOXL,DISQUALIFIED,33.0,10.53,89.1,57.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+TQQQ,DISQUALIFIED,33.0,4.41,70.9,27.9,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+LABU,DISQUALIFIED,33.0,4.37,74.5,16.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+QQQ,DISQUALIFIED,30.0,1.38,21.8,9.6,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+PDD,DISQUALIFIED,30.0,0.85,25.5,7.5,False,True,False,"❌ 탈락: 200시간선 하회, 변동성 부족(저활성)"
+SQM,DISQUALIFIED,30.0,0.95,52.7,8.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+ALB,DISQUALIFIED,30.0,1.11,49.1,6.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+PCAR,DISQUALIFIED,30.0,0.68,16.4,0.6,True,False,False,"❌ 탈락: 10/30일 거시 역배열, 변동성 부족(저활성)"
+TJX,DISQUALIFIED,30.0,1.14,10.9,7.8,False,True,False,❌ 탈락: 200시간선 하회
+WDAY,DISQUALIFIED,30.0,0.99,49.1,8.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+NU,DISQUALIFIED,30.0,0.98,38.2,0.5,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+RTX,DISQUALIFIED,30.0,1.18,10.9,7.8,False,True,False,❌ 탈락: 200시간선 하회
+CCJ,DISQUALIFIED,30.0,1.16,60.0,5.6,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+EEM,DISQUALIFIED,30.0,1.14,47.3,6.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+CMI,DISQUALIFIED,30.0,1.05,47.3,9.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+FCX,DISQUALIFIED,30.0,1.09,54.5,5.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+NFLX,DISQUALIFIED,25.0,1.09,30.9,6.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+BKR,DISQUALIFIED,25.0,1.43,10.9,11.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+OXY,DISQUALIFIED,25.0,1.09,50.9,12.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+VALE,DISQUALIFIED,25.0,0.88,40.0,4.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+DIA,DISQUALIFIED,25.0,0.72,5.5,4.6,False,True,False,"❌ 탈락: 200시간선 하회, 변동성 부족(저활성)"
+HAL,DISQUALIFIED,25.0,0.99,25.5,9.3,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+BIDU,DISQUALIFIED,25.0,0.89,49.1,3.6,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+GLD,DISQUALIFIED,25.0,0.58,43.6,1.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+MELI,DISQUALIFIED,20.0,1.18,29.1,14.5,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+MNST,DISQUALIFIED,20.0,0.64,20.0,8.2,False,True,False,"❌ 탈락: 200시간선 하회, 변동성 부족(저활성)"
+SCHW,DISQUALIFIED,20.0,0.94,12.7,4.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+T,DISQUALIFIED,20.0,0.59,25.5,0.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+WMB,DISQUALIFIED,15.0,1.02,14.5,7.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+SPY,DISQUALIFIED,15.0,0.91,5.5,5.2,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+COF,DISQUALIFIED,15.0,0.67,27.3,8.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+HPQ,DISQUALIFIED,15.0,1.05,18.2,6.1,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+BAC,DISQUALIFIED,15.0,1.14,14.5,6.8,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열"
+HYG,DISQUALIFIED,10.0,0.15,0.0,0.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+IWM,DISQUALIFIED,10.0,0.9,10.9,4.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+SYY,DISQUALIFIED,5.0,0.61,12.7,8.4,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+SRE,DISQUALIFIED,5.0,0.49,12.7,9.7,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+KMI,DISQUALIFIED,5.0,0.77,12.7,6.9,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
+DXCM,DISQUALIFIED,0.0,0.9,21.8,11.0,False,False,False,"❌ 탈락: 200시간선 하회, 10/30일 거시 역배열, 변동성 부족(저활성)"
