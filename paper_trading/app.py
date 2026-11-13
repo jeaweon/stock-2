@@ -5,10 +5,12 @@ with 1-hour candle API screening (Champion DNA 4-step screener),
 Promising Strategy #3 execution, KRW FX conversion, extended-hours 1m overlay,
 20-slot integer-share sizing, 0.1% one-way fees, and GitHub Gist cloud persistence.
 """
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
 import sys
+import time
 from typing import Any, Dict, List, Optional
 import pandas as pd
 import plotly.graph_objects as go
@@ -32,10 +34,10 @@ from engine import (
     apply_extended_hours_price,
     convert_usd_to_krw_1h,
     evaluate_champion_dna_1h,
-    fetch_live_1h_batch,
     fetch_market_indices,
     fetch_usd_krw_hourly,
     normalize_tickers,
+    run_full_hourly_cycle,
     standardize_ohlcv_df,
 )
 
@@ -116,6 +118,67 @@ if "last_scan_summary" not in st.session_state:
     st.session_state.last_scan_summary = None
 if "action_notices" not in st.session_state:
     st.session_state.action_notices = []
+if "auto_hourly_last_run_epoch" not in st.session_state:
+    st.session_state.auto_hourly_last_run_epoch = None
+
+KST = timezone(timedelta(hours=9))
+AUTO_INTERVAL_SECONDS = 3600
+
+
+def _execute_and_store_scan(
+    target_universe: List[str],
+    source_label: str = "수동 실행",
+    show_progress: bool = True,
+) -> None:
+    """Run full 1h API scan + FX + extended-hours + strategy #3 execution and save UI state."""
+    cached_fx_hourly.clear()
+    cached_market_indices.clear()
+    cached_single_stock_1h.clear()
+
+    prog = st.progress(0.0, text="실시간 환율(KRW=X) 조회 중...") if show_progress else None
+
+    def _on_stage(pct: float, txt: str) -> None:
+        if prog is not None:
+            prog.progress(min(1.0, max(0.0, pct)), text=txt)
+
+    def _on_batch(done: int, total: int, label: str) -> None:
+        if prog is not None:
+            prog.progress(
+                min(0.85, (done / max(1, total)) * 0.85),
+                text=f"1시간봉 API 데이터 조회 중 ({done}/{total}) - {label}",
+            )
+
+    scan_res = run_full_hourly_cycle(
+        trader=trader,
+        scan_universe=target_universe,
+        auto_trade=True,
+        refresh_state_first=bool(trader.gist_id and trader.github_token),
+        apply_ext_to_candidates=True,
+        stage_callback=_on_stage,
+        batch_progress_callback=_on_batch,
+    )
+
+    st.session_state.scan_usd_cache = scan_res["usd_map"]
+    st.session_state.scan_krw_cache = scan_res["krw_map"]
+    st.session_state.scan_evals = scan_res["eval_map"]
+    scan_res["executed_at_kst"] = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S KST")
+    scan_res["source_label"] = source_label
+    st.session_state.last_scan_summary = scan_res
+    st.session_state.auto_hourly_last_run_epoch = time.time()
+
+    notices = []
+    for s_msg in scan_res["sell_executions"]:
+        notices.append(("warning", f"[{source_label}] {s_msg}"))
+    for b_msg in scan_res["buy_executions"]:
+        notices.append(("success", f"[{source_label}] {b_msg}"))
+    if not scan_res["sell_executions"] and not scan_res["buy_executions"]:
+        notices.append((
+            "info",
+            f"[{source_label}] 🔍 {scan_res['scanned_count']}개 종목 API 검색 완료 "
+            f"(BUY_READY: {scan_res['buy_ready_count']}종목, "
+            f"예산초과 스킵: {len(scan_res['skipped_over_budget'])}종목). 신규 체결은 없습니다.",
+        ))
+    st.session_state.action_notices = notices
 
 
 # ---------------------------------------------------------
@@ -124,12 +187,27 @@ if "action_notices" not in st.session_state:
 with st.sidebar:
     st.markdown("### ⚙️ 시스템 관리")
 
-    if st.button("📈 보유 종목 · 지수 최신화", width="stretch"):
+    if st.button("📈 보유 종목 · 지수 · Gist 최신화", width="stretch"):
         cached_fx_hourly.clear()
         cached_market_indices.clear()
         cached_single_stock_1h.clear()
-        st.session_state.action_notices.append(("success", "최신 환율, 지수 및 보유 종목 실시간(장외 포함) 시세를 불러왔습니다!"))
+        if trader.gist_id and trader.github_token:
+            trader._load_from_file()
+        st.session_state.action_notices.append(("success", "최신 환율, 지수, 장외 시세 및 클라우드(Gist) 계좌 상태를 동기화했습니다!"))
         st.rerun()
+
+    st.markdown("---")
+    st.markdown("### ⏰ 1시간 자동 갱신 & 매매")
+    auto_hourly_enabled = st.toggle(
+        "웹 열어둔 동안 1시간마다 자동 실행",
+        value=False,
+        key="auto_hourly_enabled",
+        help="브라우저 탭이 열려있는 동안 60분마다 자동으로 1시간봉 API를 검색해 매수·매도를 실행합니다. 24시간 무인 실행은 GitHub Actions(매시 5분)가 담당합니다.",
+    )
+    if auto_hourly_enabled and st.session_state.auto_hourly_last_run_epoch is None:
+        st.session_state.auto_hourly_last_run_epoch = time.time()
+    elif not auto_hourly_enabled:
+        st.caption("ℹ️ 브라우저 종료 후에도 GitHub Actions(`.github/workflows/hourly_paper_trade.yml`)가 매시간 자동 매매를 수행할 수 있습니다.")
 
     st.markdown("---")
     st.markdown("### 🎯 API 종목 검색(스크리너) 설정")
@@ -198,6 +276,30 @@ with st.sidebar:
             st.sidebar.error(gist_msg)
 
 
+@st.fragment(run_every=60)
+def _hourly_auto_scheduler_fragment(target_universe: List[str]) -> None:
+    if not st.session_state.get("auto_hourly_enabled", False):
+        return
+    last_ep = st.session_state.get("auto_hourly_last_run_epoch")
+    if last_ep is None:
+        last_ep = time.time()
+        st.session_state.auto_hourly_last_run_epoch = last_ep
+
+    elapsed = time.time() - float(last_ep)
+    remaining_sec = max(0, int(AUTO_INTERVAL_SECONDS - elapsed))
+    next_kst = datetime.fromtimestamp(float(last_ep) + AUTO_INTERVAL_SECONDS, tz=KST).strftime("%H:%M:%S")
+    with st.sidebar:
+        st.info(f"⏳ 자동 타이머 활성 중 · 다음 실행까지 약 **{max(1, (remaining_sec + 59) // 60)}분** (`{next_kst} KST` 예정)")
+
+    if elapsed >= AUTO_INTERVAL_SECONDS:
+        with st.spinner("⏰ 1시간 주기 자동 API 종목 검색 & 모의매매 실행 중..."):
+            _execute_and_store_scan(target_universe, source_label="⏰ 1시간 웹 자동 실행", show_progress=False)
+        st.rerun(scope="app")
+
+
+_hourly_auto_scheduler_fragment(scan_universe)
+
+
 # ---------------------------------------------------------
 # Display Action Notices & Primary API Scan Button
 # ---------------------------------------------------------
@@ -216,72 +318,14 @@ if st.session_state.action_notices:
 act_col1, act_col2 = st.columns([2.3, 2.7])
 
 if act_col1.button("🚀 주식 API 1시간봉 종목 검색 & 자동 매수/매도 실행", type="primary", width="stretch"):
-    prog = st.progress(0.0, text="실시간 환율(KRW=X) 조회 중...")
-    cached_fx_hourly.clear()
-    fx_series = cached_fx_hourly()
-
-    targets = normalize_tickers(list(trader.positions.keys()) + scan_universe)
-
-    def _on_prog(done: int, total: int, label: str) -> None:
-        prog.progress(min(1.0, done / max(1, total)), text=f"1시간봉 API 데이터 조회 중 ({done}/{total}) - {label}")
-
-    raw_batch, failed_map = fetch_live_1h_batch(targets, period="90d", chunk_size=25, progress_callback=_on_prog)
-    prog.progress(0.88, text="챔피언 DNA 4단계 스크리너 분석 및 장외 실시간 가격(prepost) 반영 중...")
-
-    # First-pass evaluation to find BUY_READY & held tickers so extended-hours 1m overlay runs fast on key targets
-    usd_map: Dict[str, pd.DataFrame] = {}
-    krw_map: Dict[str, pd.DataFrame] = {}
-    eval_map: Dict[str, DnaEvaluation] = {}
-
-    for sym, df_u in raw_batch.items():
-        # Apply live extended-hours 1m execution price to held positions immediately
-        if sym in trader.positions:
-            df_u = apply_extended_hours_price(sym, df_u)
-        df_k = convert_usd_to_krw_1h(df_u, fx_series)
-        ev = evaluate_champion_dna_1h(df_u, df_k, sym)
-        usd_map[sym] = df_u
-        krw_map[sym] = df_k
-        eval_map[sym] = ev
-
-    # Also apply extended-hours 1m price overlay on BUY_READY candidates before final order execution
-    for sym, ev in list(eval_map.items()):
-        if ev.is_buy_signal and sym not in trader.positions:
-            df_u_ext = apply_extended_hours_price(sym, usd_map[sym])
-            df_k_ext = convert_usd_to_krw_1h(df_u_ext, fx_series)
-            usd_map[sym] = df_u_ext
-            krw_map[sym] = df_k_ext
-            eval_map[sym] = evaluate_champion_dna_1h(df_u_ext, df_k_ext, sym)
-
-    prog.progress(0.96, text="유망 매매 방법 3호 매수/매도 체결 엔진 실행 중...")
-    scan_res = trader.run_api_scan_and_trade(eval_map, auto_trade=True)
-    scan_res["scanned_count"] = len(eval_map)
-    scan_res["failed_count"] = len(failed_map)
-
-    st.session_state.scan_usd_cache = usd_map
-    st.session_state.scan_krw_cache = krw_map
-    st.session_state.scan_evals = eval_map
-    st.session_state.last_scan_summary = scan_res
-
-    prog.progress(1.0, text="검색 및 자동 매매 완료!")
-
-    notices = []
-    for s_msg in scan_res["sell_executions"]:
-        notices.append(("warning", s_msg))
-    for b_msg in scan_res["buy_executions"]:
-        notices.append(("success", b_msg))
-    if not scan_res["sell_executions"] and not scan_res["buy_executions"]:
-        notices.append((
-            "info",
-            f"🔍 {len(eval_map)}개 종목 API 검색 완료 (매수 적격 BUY_READY: {scan_res['buy_ready_count']}종목, "
-            f"예산초과 스킵: {len(scan_res['skipped_over_budget'])}종목). 신규 체결은 없습니다.",
-        ))
-    st.session_state.action_notices = notices
+    _execute_and_store_scan(scan_universe, source_label="수동 즉시 실행", show_progress=True)
     st.rerun()
 
 last_sum = st.session_state.get("last_scan_summary")
 if last_sum:
     act_col2.info(
-        f"🔎 최근 API 검색: **{last_sum['scanned_count']}종목** 검사 | "
+        f"🔎 최근 API 검색 ({last_sum.get('source_label', '-')}, {last_sum.get('executed_at_kst', '-')}): "
+        f"**{last_sum['scanned_count']}종목** 검사 | "
         f"매수체결 **{len(last_sum['buy_executions'])}건** | "
         f"매도체결 **{len(last_sum['sell_executions'])}건** | "
         f"예산초과 스킵 **{len(last_sum['skipped_over_budget'])}건**"

@@ -1040,3 +1040,78 @@ class SimulatedTrader:
             "realized_profit_krw": int(round(sum(profits))),
             "total_fees_krw": int(round(closed_fees + open_fees)),
         }
+
+
+def run_full_hourly_cycle(
+    trader: SimulatedTrader,
+    scan_universe: Iterable[str],
+    auto_trade: bool = True,
+    refresh_state_first: bool = False,
+    apply_ext_to_candidates: bool = True,
+    fx_series: Optional[pd.Series] = None,
+    stage_callback: Optional[Callable[[float, str], None]] = None,
+    batch_progress_callback: Optional[Callable[[int, int, str], None]] = None,
+) -> Dict[str, Any]:
+    """Execute one complete 1-hour API scan, FX conversion, extended-hours overlay, and trade cycle.
+
+    Shared single pipeline used by both interactive Streamlit scans (manual button & hourly
+    auto-refresh fragment) and headless GitHub Actions hourly cron runs (`auto_trade.py`).
+    """
+    if refresh_state_first:
+        trader._load_from_file()
+
+    if stage_callback:
+        stage_callback(0.05, "실시간 환율(KRW=X) 조회 중...")
+    if fx_series is None or fx_series.empty:
+        fx_series = fetch_usd_krw_hourly(period="100d")
+
+    targets = normalize_tickers(list(trader.positions.keys()) + list(scan_universe))
+    raw_batch, failed_map = fetch_live_1h_batch(
+        targets,
+        period="90d",
+        chunk_size=25,
+        progress_callback=batch_progress_callback,
+    )
+
+    if stage_callback:
+        stage_callback(0.88, "챔피언 DNA 4단계 스크리너 분석 및 장외 실시간 가격(prepost) 반영 중...")
+
+    usd_map: Dict[str, pd.DataFrame] = {}
+    krw_map: Dict[str, pd.DataFrame] = {}
+    eval_map: Dict[str, DnaEvaluation] = {}
+
+    for sym, df_u in raw_batch.items():
+        if sym in trader.positions:
+            df_u = apply_extended_hours_price(sym, df_u)
+        df_k = convert_usd_to_krw_1h(df_u, fx_series)
+        ev = evaluate_champion_dna_1h(df_u, df_k, sym)
+        usd_map[sym] = df_u
+        krw_map[sym] = df_k
+        eval_map[sym] = ev
+
+    if apply_ext_to_candidates:
+        for sym, ev in list(eval_map.items()):
+            if ev.is_buy_signal and sym not in trader.positions:
+                df_u_ext = apply_extended_hours_price(sym, usd_map[sym])
+                df_k_ext = convert_usd_to_krw_1h(df_u_ext, fx_series)
+                usd_map[sym] = df_u_ext
+                krw_map[sym] = df_k_ext
+                eval_map[sym] = evaluate_champion_dna_1h(df_u_ext, df_k_ext, sym)
+
+    if stage_callback:
+        stage_callback(0.96, "유망 매매 방법 3호 매수/매도 체결 엔진 실행 중...")
+
+    scan_res = trader.run_api_scan_and_trade(eval_map, auto_trade=auto_trade)
+    scan_res["scanned_count"] = len(eval_map)
+    scan_res["failed_count"] = len(failed_map)
+    scan_res["fx_series"] = fx_series
+    scan_res["usd_map"] = usd_map
+    scan_res["krw_map"] = krw_map
+    scan_res["eval_map"] = eval_map
+    scan_res["executed_at_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    if stage_callback:
+        stage_callback(1.0, "검색 및 자동 매매 완료!")
+
+    return scan_res
+

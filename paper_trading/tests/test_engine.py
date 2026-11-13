@@ -18,6 +18,7 @@ from engine import (
     convert_usd_to_krw_1h,
     evaluate_champion_dna_1h,
     extract_ticker_from_batch,
+    run_full_hourly_cycle,
 )
 
 
@@ -270,6 +271,21 @@ class TestIndependentPaperTradingEngine(unittest.TestCase):
         self.assertEqual(trader.trade_logs[0]["실현손익(원)"], 0)
         perf = trader.get_performance_summary()
         self.assertEqual(perf["total_closed"], 1)
+
+    @patch("engine.apply_extended_hours_price", side_effect=lambda sym, df: df)
+    @patch("engine.fetch_live_1h_batch")
+    @patch("engine.fetch_usd_krw_hourly")
+    def test_run_full_hourly_cycle_executes_buy(self, mock_fx, mock_batch, _mock_ext):
+        mock_fx.return_value = _make_fx_hourly(rate=1400.0, periods=360)
+        df_bull = _make_1h_bullish_usd(price_usd=100.0, atr_amp=0.025)
+        mock_batch.return_value = ({"NVDA": df_bull}, {})
+
+        trader = SimulatedTrader(initial_balance=10_000_000, save_file=self.state_file)
+        res = run_full_hourly_cycle(trader, scan_universe=["NVDA"], auto_trade=True)
+
+        self.assertEqual(res["scanned_count"], 1)
+        self.assertEqual(len(res["buy_executions"]), 1)
+        self.assertIn("NVDA", trader.positions)
 
 
 if __name__ == "__main__":
