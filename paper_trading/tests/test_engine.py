@@ -252,6 +252,25 @@ class TestIndependentPaperTradingEngine(unittest.TestCase):
         self.assertIsNotNone(sub)
         self.assertEqual(len(sub), 3)
 
+    def test_legacy_stock_minus_gist_schema_normalization(self):
+        # Legacy stock- schema lacks stop_loss_price, cost_basis_krw, and 실현손익(원)
+        legacy_state = {
+            "cash": 8_000_000,
+            "positions": {
+                "NVDA": {"qty": 10, "avg_price": 200_000, "entry_strategy": "단타"}
+            },
+            "trade_logs": [
+                {"일자": "2026-10-01", "타입": "매도", "종목": "AMD", "가격": 150_000, "수량": 5, "수익률(%)": 5.2, "진입 전략": "스윙", "상세 사유": "익절"}
+            ],
+        }
+        Path(self.state_file).write_text(json.dumps(legacy_state), encoding="utf-8")
+        trader = SimulatedTrader(save_file=self.state_file)
+        self.assertIn("NVDA", trader.positions)
+        self.assertAlmostEqual(trader.positions["NVDA"]["stop_loss_price"], 176_000.0)
+        self.assertEqual(trader.trade_logs[0]["실현손익(원)"], 0)
+        perf = trader.get_performance_summary()
+        self.assertEqual(perf["total_closed"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()

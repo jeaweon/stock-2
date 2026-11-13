@@ -442,8 +442,10 @@ if df_chart_k is not None and len(df_chart_k) >= 2:
 
     pos_active = trader.positions.get(active_sym)
     if pos_active:
-        fig.add_hline(y=float(pos_active["avg_price"]), line_color="#0F172A", line_dash="dash", annotation_text=f"매수평단 {int(pos_active['avg_price']):,}원", row=1, col=1)
-        fig.add_hline(y=float(pos_active["stop_loss_price"]), line_color="#DC2626", line_dash="dash", annotation_text=f"12% 손절선 {int(pos_active['stop_loss_price']):,}원", row=1, col=1)
+        active_avg_px = float(pos_active.get("avg_price", 0.0))
+        active_stop_px = float(pos_active.get("stop_loss_price", active_avg_px * (1.0 - trader.stop_loss_pct)))
+        fig.add_hline(y=active_avg_px, line_color="#0F172A", line_dash="dash", annotation_text=f"매수평단 {int(active_avg_px):,}원", row=1, col=1)
+        fig.add_hline(y=active_stop_px, line_color="#DC2626", line_dash="dash", annotation_text=f"12% 손절선 {int(active_stop_px):,}원", row=1, col=1)
 
     fig.add_annotation(x=max_idx, y=max_val, text=f"최고 {int(max_val):,}원", showarrow=True, arrowhead=2, arrowcolor="#e15241", ax=0, ay=-22, row=1, col=1)
     fig.add_annotation(x=min_idx, y=min_val, text=f"최저 {int(min_val):,}원", showarrow=True, arrowhead=2, arrowcolor="#267af3", ax=0, ay=22, row=1, col=1)
@@ -553,6 +555,7 @@ with tab1:
             profit_krw = est_exit_net - invested_total
             roi = (profit_krw / invested_total) * 100.0 if invested_total > 0 else 0.0
 
+            stop_px = float(pos_info.get("stop_loss_price", avg_px * (1.0 - trader.stop_loss_pct)))
             pos_rows.append({
                 "종목": sym,
                 "보유 수량": f"{qty:,} 주",
@@ -561,7 +564,7 @@ with tab1:
                 "평가금액": f"{int(round(curr_px * qty)):,} 원",
                 "예상 손익(수수료반영)": f"{int(round(profit_krw)):+,} 원",
                 "현재 수익률(%)": round(roi, 2),
-                "12% 손절가": f"{int(round(pos_info['stop_loss_price'])):,} 원",
+                "12% 손절가": f"{int(round(stop_px)):,} 원",
                 "진입 1h봉 시각": pos_info.get("entry_bar_ts", "-"),
                 "진입 전략 / 매수 이유": pos_info.get("entry_reason", pos_info.get("entry_strategy", "-")),
             })
@@ -608,8 +611,13 @@ with tab4:
 
     if trader.trade_logs:
         logs_df = pd.DataFrame(trader.trade_logs)
-        sell_logs = logs_df[logs_df["타입"] == "매도"]
+        sell_logs = logs_df[logs_df["타입"] == "매도"].copy() if "타입" in logs_df.columns else pd.DataFrame()
         if not sell_logs.empty:
+            for col_name, default_val in [("진입 전략", "-"), ("수익률(%)", 0.0), ("실현손익(원)", 0.0)]:
+                if col_name not in sell_logs.columns:
+                    sell_logs[col_name] = default_val
+            sell_logs["수익률(%)"] = pd.to_numeric(sell_logs["수익률(%)"], errors="coerce").fillna(0.0)
+            sell_logs["실현손익(원)"] = pd.to_numeric(sell_logs["실현손익(원)"], errors="coerce").fillna(0.0)
             st.markdown("#### 📊 진입 전략별 승률 & 수익률 통계")
             grp = (
                 sell_logs.groupby("진입 전략")

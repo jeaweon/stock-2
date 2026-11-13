@@ -616,6 +616,61 @@ class SimulatedTrader:
                 return f"Gist 백업 오류: {e}"
         return None
 
+    def _apply_loaded_state(self, state: Dict[str, Any]) -> None:
+        """Apply and normalize loaded JSON state (safe with legacy stock- Gist schemas)."""
+        self.initial_balance = float(state.get("initial_balance", self.initial_balance))
+        self.cash = float(state.get("cash", self.initial_balance))
+        self.max_positions = int(state.get("max_positions", self.max_positions))
+        self.fee_rate = float(state.get("fee_rate", self.fee_rate))
+        self.stop_loss_pct = float(state.get("stop_loss_pct", self.stop_loss_pct))
+
+        raw_positions = state.get("positions", {})
+        norm_positions: Dict[str, Dict[str, Any]] = {}
+        if isinstance(raw_positions, dict):
+            for sym, pos in raw_positions.items():
+                if not isinstance(pos, dict):
+                    continue
+                qty = int(pos.get("qty", 0))
+                if qty <= 0:
+                    continue
+                avg_px = float(pos.get("avg_price", 0.0))
+                cost_basis = float(pos.get("cost_basis_krw", avg_px * qty))
+                entry_fee = float(pos.get("entry_fee", 0.0))
+                stop_px = float(pos.get("stop_loss_price", avg_px * (1.0 - self.stop_loss_pct)))
+                norm_positions[str(sym)] = {
+                    **pos,
+                    "qty": qty,
+                    "avg_price": avg_px,
+                    "cost_basis_krw": cost_basis,
+                    "entry_fee": entry_fee,
+                    "stop_loss_price": stop_px,
+                    "entry_strategy": pos.get("entry_strategy", "기존 Gist 포지션"),
+                    "entry_reason": pos.get("entry_reason", pos.get("entry_strategy", "-")),
+                    "entry_bar_ts": pos.get("entry_bar_ts", "-"),
+                    "last_trade_bar_ts": pos.get("last_trade_bar_ts", ""),
+                }
+        self.positions = norm_positions
+
+        raw_logs = state.get("trade_logs", [])
+        norm_logs: List[Dict[str, Any]] = []
+        if isinstance(raw_logs, list):
+            for row in raw_logs:
+                if not isinstance(row, dict):
+                    continue
+                norm_logs.append({
+                    "일자/시각": row.get("일자/시각", row.get("일자", "-")),
+                    "타입": row.get("타입", "-"),
+                    "종목": row.get("종목", "-"),
+                    "가격(원)": row.get("가격(원)", row.get("가격", 0)),
+                    "수량(주)": row.get("수량(주)", row.get("수량", 0)),
+                    "수수료(원)": row.get("수수료(원)", 0),
+                    "실현손익(원)": row.get("실현손익(원)", row.get("실현손익", 0)),
+                    "수익률(%)": float(row.get("수익률(%)", 0.0) or 0.0),
+                    "진입 전략": row.get("진입 전략", "-"),
+                    "상세 사유": row.get("상세 사유", "-"),
+                })
+        self.trade_logs = norm_logs
+
     def _load_from_file(self) -> None:
         state = None
 
@@ -647,14 +702,8 @@ class SimulatedTrader:
             except Exception:
                 state = None
 
-        if state:
-            self.initial_balance = float(state.get("initial_balance", self.initial_balance))
-            self.cash = float(state.get("cash", self.initial_balance))
-            self.max_positions = int(state.get("max_positions", self.max_positions))
-            self.fee_rate = float(state.get("fee_rate", self.fee_rate))
-            self.stop_loss_pct = float(state.get("stop_loss_pct", self.stop_loss_pct))
-            self.positions = state.get("positions", {})
-            self.trade_logs = state.get("trade_logs", [])
+        if isinstance(state, dict):
+            self._apply_loaded_state(state)
 
     def reset_account(self, new_initial_balance: Optional[float] = None) -> Optional[str]:
         """Reset cash, positions, and trade logs cleanly on both local & Gist."""
@@ -671,13 +720,7 @@ class SimulatedTrader:
             parsed = json.loads(raw_bytes.decode("utf-8"))
             if not isinstance(parsed, dict) or "cash" not in parsed:
                 return False, "유효한 계좌 백업 JSON 형식이 아닙니다."
-            self.initial_balance = float(parsed.get("initial_balance", self.initial_balance))
-            self.cash = float(parsed.get("cash", self.initial_balance))
-            self.max_positions = int(parsed.get("max_positions", self.max_positions))
-            self.fee_rate = float(parsed.get("fee_rate", self.fee_rate))
-            self.stop_loss_pct = float(parsed.get("stop_loss_pct", self.stop_loss_pct))
-            self.positions = parsed.get("positions", {})
-            self.trade_logs = parsed.get("trade_logs", [])
+            self._apply_loaded_state(parsed)
             err = self._save_to_file()
             return True, "복원 완료" + (f" (Gist 경고: {err})" if err else " (로컬 + 클라우드 동기화 완료)")
         except Exception as e:
