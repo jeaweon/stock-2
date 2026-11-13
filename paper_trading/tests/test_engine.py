@@ -233,6 +233,15 @@ class TestIndependentPaperTradingEngine(unittest.TestCase):
         self.assertTrue(mock_patch.called)
         self.assertEqual(trader.cash, 10_000_000.0)
 
+        # Verify sanitization of quotes, GIST_ID=..., and full gist URL
+        dirty = SimulatedTrader(
+            save_file=self.state_file,
+            gist_id='GIST_ID = "https://gist.github.com/jeaweon/abc123def"',
+            github_token='GIST_TOKEN = "ghp_clean_tok"',
+        )
+        self.assertEqual(dirty.gist_id, "abc123def")
+        self.assertEqual(dirty.github_token, "ghp_clean_tok")
+
     @patch("engine.yf.download")
     def test_extended_hours_overlay(self, mock_dl):
         df_u = _make_1h_bullish_usd(price_usd=100.0, periods=50)

@@ -568,10 +568,31 @@ class SimulatedTrader:
         self.stop_loss_pct = float(stop_loss_pct)
         self.positions: Dict[str, Dict[str, Any]] = {}
         self.trade_logs: List[Dict[str, Any]] = []
-        self.gist_id = str(gist_id or "").strip()
-        self.github_token = str(github_token or "").strip()
+        self.gist_id = self._clean_gist_id(gist_id)
+        self.github_token = self._clean_secret_value(github_token)
 
         self._load_from_file()
+
+    @staticmethod
+    def _clean_secret_value(raw: Optional[str]) -> str:
+        val = str(raw or "").strip()
+        # Handle accidental "KEY = 'value'" TOML-style paste inside Secrets box
+        if "=" in val and val.split("=", 1)[0].strip().upper() in {"GIST_ID", "GIST_TOKEN", "GITHUB_TOKEN"}:
+            val = val.split("=", 1)[1].strip()
+        return val.strip().strip('"').strip("'").strip()
+
+    @classmethod
+    def _clean_gist_id(cls, raw: Optional[str]) -> str:
+        val = cls._clean_secret_value(raw).rstrip("/")
+        if "/" in val:
+            val = val.rsplit("/", 1)[-1].strip()
+        return val
+
+    def _gist_headers(self) -> Dict[str, str]:
+        return {
+            "Authorization": f"Bearer {self.github_token}",
+            "Accept": "application/vnd.github.v3+json",
+        }
 
     def _build_state_dict(self) -> Dict[str, Any]:
         return {
@@ -592,10 +613,7 @@ class SimulatedTrader:
             json.dump(state, f, ensure_ascii=False, indent=4)
 
         if self.gist_id and self.github_token:
-            headers = {
-                "Authorization": f"token {self.github_token}",
-                "Accept": "application/vnd.github.v3+json",
-            }
+            headers = self._gist_headers()
             payload = {
                 "files": {
                     self.gist_filename: {
@@ -676,10 +694,7 @@ class SimulatedTrader:
 
         # 1. Load from GitHub Gist first if configured
         if self.gist_id and self.github_token:
-            headers = {
-                "Authorization": f"token {self.github_token}",
-                "Accept": "application/vnd.github.v3+json",
-            }
+            headers = self._gist_headers()
             try:
                 res = requests.get(
                     f"https://api.github.com/gists/{self.gist_id}",
@@ -730,20 +745,22 @@ class SimulatedTrader:
         """Verify GitHub Gist connectivity mirroring stock-'s diagnostics."""
         if not self.gist_id or not self.github_token:
             return False, "❌ Secrets에 GIST_ID 또는 GITHUB_TOKEN 값이 빠져 있습니다!"
-        headers = {
-            "Authorization": f"token {self.github_token}",
-            "Accept": "application/vnd.github.v3+json",
-        }
         try:
             res = requests.get(
                 f"https://api.github.com/gists/{self.gist_id}",
-                headers=headers,
+                headers=self._gist_headers(),
                 timeout=10,
             )
             if res.status_code == 200:
                 return True, "✅ 클라우드(Gist) 연동이 완벽하게 설정되었습니다!"
+            if res.status_code == 401:
+                return (
+                    False,
+                    "❌ 인증 실패(401): GIST_TOKEN 값이 잘못되었거나 만료되었습니다. "
+                    "(GIST_ID와 순서가 바뀌지 않았는지, Classic 토큰에서 `gist` 체크 후 발급했는지 확인해 주세요!)",
+                )
             if res.status_code == 404:
-                return False, "❌ 연결 실패: Gist 아이디(URL)가 잘못되었거나, 토큰 권한이 부족합니다."
+                return False, "❌ 연결 실패(404): Gist 아이디(URL)가 잘못되었거나, 토큰에 `gist` 권한이 부족합니다."
             return False, f"❌ 오류 코드 {res.status_code}: 설정값을 다시 확인해주세요."
         except Exception as e:
             return False, f"❌ 네트워크 오류: {e}"
