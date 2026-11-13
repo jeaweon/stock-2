@@ -41,7 +41,15 @@ def main() -> int:
     gist_token = (os.getenv("GIST_TOKEN") or os.getenv("GITHUB_TOKEN") or "").strip()
 
     if not args.dry_run and not args.allow_local and (not gist_id or not gist_token):
-        msg = "❌ GIST_ID 또는 GIST_TOKEN(GITHUB_TOKEN) 환경변수가 설정되지 않았습니다. GitHub Secrets를 확인하세요."
+        id_state = "정상(설정됨)" if gist_id else "❌ 비어있음"
+        tok_state = "정상(설정됨)" if gist_token else "❌ 비어있음"
+        msg = (
+            f"❌ GitHub Repository Secrets가 전달되지 않았습니다.\n"
+            f"- `GIST_ID`: {id_state}\n"
+            f"- `GIST_TOKEN`: {tok_state}\n"
+            f"👉 Variables 탭이나 Environment secrets가 아닌 **Repository secrets**에 정확한 대문자 이름으로 저장한 뒤, "
+            f"이전 실패 실행의 `Re-run` 대신 **Actions → Run workflow**로 새로 실행해 주세요."
+        )
         print(msg)
         _write_step_summary(["## ⚠️ 자동매매 실행 중단", msg])
         return 1
