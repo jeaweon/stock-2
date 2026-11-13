@@ -1,0 +1,36 @@
+name: Hourly 1h Paper Trading Auto-Scan
+
+on:
+  schedule:
+    - cron: "5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: paper-trading-hourly-cycle
+  cancel-in-progress: false
+
+jobs:
+  run-hourly-paper-trade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r paper_trading/requirements.txt
+
+      - name: Run 1-hour API screener & auto paper trade
+        env:
+          GIST_ID: ${{ secrets.GIST_ID }}
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+        run: |
+          python paper_trading/auto_trade.py
